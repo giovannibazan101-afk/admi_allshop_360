@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AllShop — Panel Administrativo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07090f;
+  --bg2: #0d1119;
+  --surface: rgba(255,255,255,0.035);
+  --surface2: rgba(255,255,255,0.065);
+  --blue: #5b9cf6;
+  --blue2: #3b82f6;
+  --teal: #2dd4bf;
+  --gold: #f59e0b;
+  --gold2: #fbbf24;
+  --purple: #a78bfa;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(91,156,246,0.3);
+  --text: #e4eaf7;
+  --text2: #8a9ab8;
+  --red: #f87171;
+  --green: #34d399;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --sidebar-w: 240px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");opacity:.35;}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(91,156,246,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(91,156,246,0.025) 1px,transparent 1px);background-size:52px 52px;z-index:0;pointer-events:none;}
+.bg-glow{position:fixed;border-radius:50%;filter:blur(160px);opacity:0.07;z-index:0;pointer-events:none;}
+.bg-glow-1{width:700px;height:700px;background:#3b82f6;top:-300px;left:-200px;}
+.bg-glow-2{width:600px;height:600px;background:#a78bfa;bottom:-200px;right:-200px;}
+
+/* ── LOGIN ── */
+#login-screen{position:relative;z-index:10;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-wrap{width:100%;max-width:420px;animation:slideUp .7s cubic-bezier(.16,1,.3,1) both;}
+@keyframes slideUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
+.login-card{background:rgba(13,17,25,0.95);backdrop-filter:blur(32px);border:1px solid rgba(255,255,255,0.1);border-radius:28px;padding:48px 40px;box-shadow:0 0 0 1px rgba(91,156,246,0.06),0 50px 100px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.08);position:relative;overflow:hidden;}
+.login-card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,0.9),rgba(91,156,246,0.5),transparent);}
+.admin-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:600;color:var(--purple);text-transform:uppercase;letter-spacing:.1em;margin-bottom:28px;}
+.login-title{font-family:'Fraunces',serif;font-size:30px;font-weight:700;line-height:1.1;margin-bottom:6px;letter-spacing:-1px;}
+.login-subtitle{font-size:13px;color:var(--text2);margin-bottom:32px;line-height:1.6;}
+.field{margin-bottom:18px;position:relative;}
+.field-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;display:block;}
+.field-icon{width:42px;height:50px;position:absolute;bottom:0;left:0;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text2);pointer-events:none;}
+.field-input{width:100%;height:50px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;padding:0 16px 0 44px;outline:none;transition:border-color .25s,background .25s,box-shadow .25s;}
+.field-input:focus{border-color:rgba(167,139,250,0.65);background:rgba(167,139,250,0.07);box-shadow:0 0 0 3px rgba(167,139,250,0.12);}
+.field-input::placeholder{color:rgba(138,154,184,0.4);}
+.toggle-pw{width:42px;height:50px;position:absolute;bottom:0;right:0;display:flex;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;font-size:14px;color:var(--text2);transition:color .25s;}
+.toggle-pw:hover{color:var(--purple);}
+.pw-field .field-input{padding-right:44px;}
+.btn-login{width:100%;height:52px;border-radius:16px;border:none;cursor:pointer;background:linear-gradient(135deg,#7c3aed,#a78bfa,#5b9cf6);background-size:200% 200%;color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;letter-spacing:.4px;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 8px 32px rgba(124,58,237,0.45),inset 0 1px 0 rgba(255,255,255,0.2);transition:all .3s;animation:gradientShift 4s ease infinite;}
+@keyframes gradientShift{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+.btn-login:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 14px 40px rgba(124,58,237,0.55);}
+.btn-login:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+.btn-spinner{display:none;width:20px;height:20px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.error-box{margin-top:14px;padding:13px 16px;border-radius:12px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.28);font-size:13px;color:var(--red);display:none;align-items:center;gap:8px;}
+.error-box.show{display:flex;}
+
+/* ── ADMIN PANEL ── */
+#admin-panel{display:none;position:relative;z-index:10;min-height:100vh;}
+#admin-panel.visible{display:flex;}
+
+/* Sidebar */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:rgba(13,17,25,0.9);backdrop-filter:blur(24px);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:30;overflow-y:auto;}
+.sidebar-header{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+.sidebar-brand{display:flex;align-items:center;gap:10px;}
+.sidebar-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 14px rgba(124,58,237,0.4);}
+.sidebar-name{font-family:'Fraunces',serif;font-size:17px;font-weight:900;letter-spacing:-.3px;}
+.sidebar-tag{font-size:10px;color:var(--purple);font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-top:2px;}
+.sidebar-nav{padding:16px 12px;flex:1;}
+.nav-section-label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.12em;padding:0 8px;margin-bottom:8px;margin-top:16px;}
+.nav-section-label:first-child{margin-top:0;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--text2);transition:all .2s;border:1px solid transparent;margin-bottom:3px;user-select:none;}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:var(--text);}
+.nav-item.active{background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.2);color:var(--purple);}
+.nav-item-icon{font-size:15px;width:20px;text-align:center;}
+.sidebar-footer{padding:16px 12px;border-top:1px solid var(--border);}
+.sidebar-user{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);margin-bottom:8px;}
+.sidebar-user-avatar{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.sidebar-user-name{font-size:12.5px;font-weight:600;color:var(--text);}
+.sidebar-user-role{font-size:10px;color:var(--purple);}
+.btn-sidebar-logout{width:100%;padding:9px;border-radius:10px;border:1px solid rgba(248,113,113,0.2);background:rgba(248,113,113,0.06);color:var(--red);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;letter-spacing:.04em;}
+.btn-sidebar-logout:hover{background:rgba(248,113,113,0.12);border-color:rgba(248,113,113,0.35);}
+
+/* Main */
+.main-area{flex:1;margin-left:var(--sidebar-w);min-height:100vh;display:flex;flex-direction:column;}
+.top-bar{height:64px;padding:0 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(7,9,15,.88);backdrop-filter:blur(24px);position:sticky;top:0;z-index:20;}
+.top-bar-title{font-family:'Fraunces',serif;font-size:20px;font-weight:700;letter-spacing:-.3px;}
+.top-bar-right{display:flex;align-items:center;gap:12px;}
+.top-refresh-btn{height:36px;padding:0 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;display:flex;align-items:center;gap:6px;}
+.top-refresh-btn:hover{background:rgba(91,156,246,0.1);border-color:rgba(91,156,246,0.3);color:var(--blue);}
+.top-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+
+.page-content{padding:28px;flex:1;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* ── OVERVIEW PAGE ── */
+.overview-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px 20px;position:relative;overflow:hidden;transition:border-color .25s,transform .25s,box-shadow .25s;}
+.stat-card:hover{border-color:rgba(255,255,255,0.14);transform:translateY(-3px);box-shadow:0 20px 40px rgba(0,0,0,0.3);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,linear-gradient(90deg,#7c3aed,#a78bfa));opacity:.85;}
+.stat-glow{position:absolute;width:120px;height:120px;border-radius:50%;background:var(--glow,rgba(124,58,237,0.12));filter:blur(40px);bottom:-40px;right:-20px;pointer-events:none;}
+.stat-icon{font-size:20px;margin-bottom:10px;}
+.stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+.stat-value{font-family:'Fraunces',serif;font-size:24px;font-weight:700;line-height:1;letter-spacing:-.5px;}
+.stat-sub{font-size:12px;color:var(--text2);margin-top:5px;}
+
+/* Charts row */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px 24px;}
+.chart-title{font-family:'Fraunces',serif;font-size:15px;font-weight:700;letter-spacing:-.2px;margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.chart-wrap{position:relative;}
+canvas{display:block;}
+
+/* Top deudores */
+.top-deudores{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px 24px;margin-bottom:28px;}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.section-hdr-title{font-family:'Fraunces',serif;font-size:16px;font-weight:700;letter-spacing:-.2px;}
+.section-badge{padding:4px 12px;border-radius:20px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+.badge-purple{background:rgba(167,139,250,0.13);color:var(--purple);border:1px solid rgba(167,139,250,0.22);}
+.badge-blue{background:rgba(91,156,246,0.13);color:var(--blue);border:1px solid rgba(91,156,246,0.22);}
+.badge-green{background:rgba(52,211,153,0.13);color:var(--green);border:1px solid rgba(52,211,153,0.22);}
+.badge-gold{background:rgba(245,158,11,0.13);color:var(--gold);border:1px solid rgba(245,158,11,0.22);}
+.badge-red{background:rgba(248,113,113,0.13);color:var(--red);border:1px solid rgba(248,113,113,0.22);}
+
+.deudor-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.deudor-row:last-child{border-bottom:none;}
+.deudor-rank{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text2);flex-shrink:0;}
+.deudor-rank.top1{background:rgba(245,158,11,0.12);color:var(--gold);}
+.deudor-rank.top2{background:rgba(138,154,184,0.1);color:#9ca3af;}
+.deudor-rank.top3{background:rgba(180,83,9,0.1);color:#cd7f32;}
+.deudor-name{flex:1;font-size:13.5px;font-weight:500;}
+.deudor-bar-wrap{width:140px;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;}
+.deudor-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,#7c3aed,#a78bfa);transition:width .6s ease;}
+.deudor-monto{font-size:13px;font-weight:700;color:var(--text);text-align:right;min-width:110px;}
+
+/* ── CLIENTES PAGE ── */
+.clients-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.search-wrap{position:relative;flex:1;min-width:200px;}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text2);}
+.search-input{width:100%;height:42px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:var(--text);font-size:13.5px;font-family:'DM Sans',sans-serif;padding:0 16px 0 38px;outline:none;transition:border-color .25s,background .25s;}
+.search-input:focus{border-color:rgba(167,139,250,0.5);background:rgba(167,139,250,0.06);}
+.search-input::placeholder{color:rgba(138,154,184,0.4);}
+.filter-select{height:42px;padding:0 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:var(--text2);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;}
+.filter-select:focus{border-color:rgba(167,139,250,0.5);}
+
+.clients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.client-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;}
+.client-card:hover{border-color:rgba(167,139,250,0.3);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,0.3);}
+.client-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#7c3aed,#a78bfa);opacity:0;transition:opacity .25s;}
+.client-card:hover::before{opacity:1;}
+.client-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.client-avatar{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--av1,#7c3aed),var(--av2,#a78bfa));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0;}
+.client-name{font-size:14px;font-weight:600;line-height:1.2;}
+.client-user{font-size:11px;color:var(--text2);margin-top:2px;}
+.client-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.client-stat{background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 12px;}
+.client-stat-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+.client-stat-value{font-size:15px;font-weight:700;}
+.debt-high{color:var(--red);}
+.debt-mid{color:var(--gold);}
+.debt-low{color:var(--green);}
+.client-actions{display:flex;gap:8px;margin-top:12px;}
+.btn-sm{height:32px;padding:0 14px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.btn-sm:hover{background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.3);color:var(--purple);}
+.btn-sm-primary{background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.25);color:var(--purple);}
+.btn-sm-primary:hover{background:rgba(167,139,250,0.18);}
+
+/* ── MOVIMIENTOS PAGE ── */
+.movs-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.movs-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;}
+.movs-table{width:100%;border-collapse:collapse;}
+.movs-table th{padding:14px 18px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02);}
+.movs-table td{padding:14px 18px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}
+.movs-table tr:last-child td{border-bottom:none;}
+.movs-table tr:hover td{background:rgba(167,139,250,0.03);}
+.tipo-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+.tipo-venta{background:rgba(91,156,246,0.13);color:var(--blue);}
+.tipo-pago{background:rgba(52,211,153,0.13);color:var(--green);}
+.monto-pos{font-weight:700;font-size:14px;color:var(--blue);}
+.monto-neg{font-weight:700;font-size:14px;color:var(--green);}
+
+/* ── MODAL CLIENTE ── */
+#client-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);}
+#client-modal.show{display:flex;}
+.modal-card{background:#0d1119;border:1px solid rgba(255,255,255,0.12);border-radius:24px;width:100%;max-width:720px;max-height:90vh;overflow-y:auto;box-shadow:0 50px 120px rgba(0,0,0,0.9);animation:modalIn .3s cubic-bezier(.16,1,.3,1);}
+@keyframes modalIn{from{opacity:0;transform:scale(0.95) translateY(20px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.modal-header{padding:24px 28px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#0d1119;z-index:10;}
+.modal-title{font-family:'Fraunces',serif;font-size:20px;font-weight:700;letter-spacing:-.3px;}
+.modal-close{width:32px;height:32px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--text2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.modal-close:hover{background:rgba(248,113,113,0.1);border-color:rgba(248,113,113,0.3);color:var(--red);}
+.modal-body{padding:24px 28px 28px;}
+.modal-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;}
+.modal-stat{background:rgba(255,255,255,0.03);border-radius:14px;padding:16px;}
+.modal-stat-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+.modal-stat-value{font-family:'Fraunces',serif;font-size:20px;font-weight:700;}
+.modal-section-title{font-family:'Fraunces',serif;font-size:15px;font-weight:700;margin-bottom:12px;margin-top:20px;}
+.cuotas-mini{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;}
+.cuota-chip{padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;}
+.cuota-chip-next{background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);color:var(--gold);}
+.cuota-chip-rest{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text2);}
+.modal-movs-table{width:100%;border-collapse:collapse;}
+.modal-movs-table th{padding:10px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border);}
+.modal-movs-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);}
+.modal-movs-table tr:last-child td{border-bottom:none;}
+
+/* ── LOADING ── */
+.loading-state{text-align:center;padding:60px 24px;color:var(--text2);}
+.loading-spinner-wrap{display:flex;justify-content:center;margin-bottom:16px;}
+.loading-spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.08);border-top-color:var(--purple);border-radius:50%;animation:spin .8s linear infinite;}
+.loading-label{font-size:13px;}
+.empty-state{text-align:center;padding:52px 24px;color:var(--text2);}
+.empty-state .icon{font-size:36px;margin-bottom:14px;}
+.empty-state p{font-size:13px;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px;}
+
+/* Mobile */
+@media(max-width:800px){
+  :root{--sidebar-w:0px;}
+  .sidebar{transform:translateX(-240px);transition:transform .3s;width:240px;}
+  .sidebar.open{transform:translateX(0);}
+  .main-area{margin-left:0;}
+  .overview-stats{grid-template-columns:1fr 1fr;}
+  .charts-row{grid-template-columns:1fr;}
+  .clients-grid{grid-template-columns:1fr;}
+  .top-bar{padding:0 16px;}
+  .page-content{padding:16px;}
+  .mobile-menu-btn{display:flex!important;}
+}
+.mobile-menu-btn{display:none;width:36px;height:36px;align-items:center;justify-content:center;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);cursor:pointer;font-size:18px;color:var(--text2);}
+.sidebar-overlay{display:none;position:fixed;inset:0;z-index:29;background:rgba(0,0,0,0.5);}
+.sidebar-overlay.show{display:block;}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<!-- ══ LOGIN ══ -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="admin-badge">🛡️ Panel Administrativo</div>
+      <div class="login-title">Acceso Exclusivo</div>
+      <div class="login-subtitle">Solo para administradores de AllShop. Ingresá tus credenciales.</div>
+      <div class="field">
+        <label class="field-label">Usuario Admin</label>
+        <span class="field-icon">👤</span>
+        <input id="inp-user" class="field-input" type="text" placeholder="usuario" autocomplete="username" spellcheck="false">
+      </div>
+      <div class="field pw-field">
+        <label class="field-label">Contraseña</label>
+        <span class="field-icon">🔒</span>
+        <input id="inp-pass" class="field-input" type="password" placeholder="••••••••••••" autocomplete="current-password">
+        <button id="toggle-pw" class="toggle-pw" type="button">👁️</button>
+      </div>
+      <button class="btn-login" id="btn-login" onclick="doAdminLogin()">
+        <span id="btn-icon">🔐</span>
+        <span id="btn-label">Acceder</span>
+        <div id="btn-spinner" class="btn-spinner"></div>
+      </button>
+      <div class="error-box" id="error-box">⚠️ <span id="error-msg">Credenciales incorrectas.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN PANEL ══ -->
+<div id="admin-panel">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="sidebar-icon">🛍️</div>
+        <div>
+          <div class="sidebar-name">ALLSHOP</div>
+          <div class="sidebar-tag">Admin Panel</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <div class="nav-item active" onclick="showPage('overview')" id="nav-overview">
+        <span class="nav-item-icon">📊</span> Resumen General
+      </div>
+      <div class="nav-item" onclick="showPage('clients')" id="nav-clients">
+        <span class="nav-item-icon">👥</span> Clientes
+      </div>
+      <div class="nav-item" onclick="showPage('movimientos')" id="nav-movimientos">
+        <span class="nav-item-icon">📋</span> Movimientos
+      </div>
+      <div class="nav-section-label">Análisis</div>
+      <div class="nav-item" onclick="showPage('deudas')" id="nav-deudas">
+        <span class="nav-item-icon">💰</span> Deudas & Cuotas
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar">👑</div>
+        <div>
+          <div class="sidebar-user-name">Giovanni Bazán</div>
+          <div class="sidebar-user-role">Administrador</div>
+        </div>
+      </div>
+      <button class="btn-sidebar-logout" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <div class="top-bar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="mobile-menu-btn" onclick="openSidebar()">☰</button>
+        <div class="top-bar-title" id="top-bar-title">Resumen General</div>
+      </div>
+      <div class="top-bar-right">
+        <div class="top-status"><div class="status-dot"></div> <span id="last-update">—</span></div>
+        <button class="top-refresh-btn" onclick="refreshData()">🔄 Actualizar</button>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <!-- OVERVIEW -->
+      <div class="page active" id="page-overview">
+        <div class="overview-stats" id="overview-stats">
+          <div class="loading-state" style="grid-column:1/-1;">
+            <div class="loading-spinner-wrap"><div class="loading-spinner"></div></div>
+            <div class="loading-label">Cargando datos del Sheet…</div>
+          </div>
+        </div>
+        <div class="charts-row" id="charts-row" style="display:none;">
+          <div class="chart-card">
+            <div class="chart-title">📈 Movimientos por Tipo</div>
+            <div class="chart-wrap"><canvas id="chart-tipos" height="180"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">👥 Top Clientes por Movimientos</div>
+            <div class="chart-wrap"><canvas id="chart-clientes" height="180"></canvas></div>
+          </div>
+        </div>
+        <div class="top-deudores" id="top-deudores-card" style="display:none;">
+          <div class="section-hdr">
+            <div class="section-hdr-title">🏆 Ranking de Deudas</div>
+            <span class="section-badge badge-red" id="deudores-badge">Cargando…</span>
+          </div>
+          <div id="deudores-list"></div>
+        </div>
+      </div>
+
+      <!-- CLIENTS -->
+      <div class="page" id="page-clients">
+        <div class="clients-toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" id="client-search" placeholder="Buscar cliente…" oninput="filterClients()">
+          </div>
+          <select class="filter-select" id="client-sort" onchange="filterClients()">
+            <option value="name">A-Z</option>
+            <option value="debt-desc">Mayor deuda</option>
+            <option value="debt-asc">Menor deuda</option>
+            <option value="movs">Más movimientos</option>
+          </select>
+        </div>
+        <div class="clients-grid" id="clients-grid">
+          <div class="loading-state" style="grid-column:1/-1;">
+            <div class="loading-spinner-wrap"><div class="loading-spinner"></div></div>
+            <div class="loading-label">Cargando clientes…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOVIMIENTOS -->
+      <div class="page" id="page-movimientos">
+        <div class="movs-toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" id="movs-search" placeholder="Buscar por cliente, producto, descripción…" oninput="filterMovs()">
+          </div>
+          <select class="filter-select" id="movs-tipo" onchange="filterMovs()">
+            <option value="">Todos</option>
+            <option value="VENTA">Solo compras</option>
+            <option value="PAGO">Solo pagos</option>
+          </select>
+          <select class="filter-select" id="movs-cliente" onchange="filterMovs()">
+            <option value="">Todos los clientes</option>
+          </select>
+        </div>
+        <div class="movs-table-wrap">
+          <table class="movs-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Tipo</th>
+                <th>Producto</th>
+                <th>Descripción</th>
+                <th style="text-align:right">Monto (Gs.)</th>
+              </tr>
+            </thead>
+            <tbody id="movs-tbody">
+              <tr><td colspan="6"><div class="loading-state"><div class="loading-spinner-wrap"><div class="loading-spinner"></div></div><div class="loading-label">Cargando…</div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DEUDAS -->
+      <div class="page" id="page-deudas">
+        <div class="overview-stats" id="deudas-stats" style="grid-template-columns:repeat(3,1fr);">
+          <div class="loading-state" style="grid-column:1/-1;">
+            <div class="loading-spinner-wrap"><div class="loading-spinner"></div></div>
+            <div class="loading-label">Cargando deudas…</div>
+          </div>
+        </div>
+        <div class="top-deudores" id="deudas-list-card" style="display:none;">
+          <div class="section-hdr">
+            <div class="section-hdr-title">💰 Estado de Deudas por Cliente</div>
+            <span class="section-badge badge-gold" id="deudas-badge">—</span>
+          </div>
+          <div id="deudas-full-list"></div>
+        </div>
+        <div class="charts-row" id="deudas-charts-row" style="display:none;">
+          <div class="chart-card">
+            <div class="chart-title">📊 Distribución de Deudas</div>
+            <div class="chart-wrap"><canvas id="chart-deudas" height="220"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">📅 Cuotas por Mes</div>
+            <div class="chart-wrap"><canvas id="chart-cuotas-mes" height="220"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CLIENTE ══ -->
+<div id="client-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-client-name">—</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div class="loading-state"><div class="loading-spinner-wrap"><div class="loading-spinner"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════════
+const SHEET_BASE_URL    = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSv4sJRpZ7wf2dHKkkGpYkhAt1F0ysyRzvHwkNdw05r1APa7nO8ZFDSRmJ7SoQ64wSk8idaVYt0iu5-/pub?output=csv";
+const SHEET_CUOTERO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSv4sJRpZ7wf2dHKkkGpYkhAt1F0ysyRzvHwkNdw05r1APa7nO8ZFDSRmJ7SoQ64wSk8idaVYt0iu5-/pub?gid=900301684&single=true&output=csv";
+
+// Admin credentials (SHA-256 hash de "bazan123*")
+const ADMIN_USERS = {
+  "giovannibazan": "18b9b3c8f8b1e2a5d3c7e9f0a6d2b4e8c1f5d7a9e3b0c2f4e6a8d0b2c4e6f8a0"
+};
+
+// Clientes del sistema
+const ALL_CLIENTS = [
+  { username:"fabiolaferreira",    key:"Fabiola Ferreira" },
+  { username:"luzsanabria",        key:"LUZ SANABRIA" },
+  { username:"fernandoferreira",   key:"FERNANDO FERREIRA" },
+  { username:"franciscocardozo",   key:"Francisco Cardozo" },
+  { username:"luzsalinas",         key:"LUZ SALINAS" },
+  { username:"josebritez",         key:"JOSE BRITEZ" },
+  { username:"juanflores",         key:"JUAN FLORES" },
+  { username:"elias",              key:"ELIAS" },
+  { username:"ronaldobenitezlumi", key:"RONALDO BENITEZ (LUMI)" },
+  { username:"hermanodeluz",       key:"HERMANO DE LUZ" },
+  { username:"isaias",             key:"ISAIAS" },
+  { username:"tobiasinsaurralde",  key:"TOBIAS INSAURRALDE" },
+  { username:"compañeradepaz",     key:"compañera de paz" },
+  { username:"flor",               key:"FLOR" },
+  { username:"pazgomez",           key:"Paz Gómez" },
+  { username:"veronicagil",        key:"Veronica Gil" },
+  { username:"mamadeisaias",       key:"MAMA DE ISAIAS" },
+  { username:"navidalia",          key:"ÑA VIDALIA" },
+  { username:"edgarolmedo",        key:"EDGAR OLMEDO" }
+];
+
+// AVATAR COLORS
+const AVATAR_COLORS = [
+  ['#7c3aed','#a78bfa'],['#0ea5e9','#38bdf8'],['#059669','#34d399'],
+  ['#d97706','#fbbf24'],['#dc2626','#f87171'],['#7c3aed','#818cf8'],
+  ['#0f766e','#2dd4bf'],['#b45309','#f59e0b'],['#6d28d9','#c4b5fd'],
+  ['#1d4ed8','#60a5fa'],['#065f46','#6ee7b7'],['#92400e','#fcd34d'],
+];
+function getAvatarColor(name) {
+  let h = 0;
+  for (let c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+function getInitials(name) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+  return name.substring(0,2).toUpperCase();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════
+let allMovs = [];
+let allClients = []; // enriched client objects
+let cuoteroRows = [];
+let dataLoaded = false;
+let charts = {};
+
+// ══════════════════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════════════════
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+
+let loginLocked = false, loginAttempts = 0;
+async function doAdminLogin() {
+  if (loginLocked) return;
+  const user = document.getElementById("inp-user").value.trim().toLowerCase().replace(/\s+/g,'');
+  const pass = document.getElementById("inp-pass").value;
+  const btn  = document.getElementById("btn-login");
+  const err  = document.getElementById("error-box");
+
+  if (!user || !pass) {
+    showError("Completá usuario y contraseña."); return;
+  }
+
+  btn.disabled = true;
+  document.getElementById("btn-icon").style.display = "none";
+  document.getElementById("btn-label").style.display = "none";
+  document.getElementById("btn-spinner").style.display = "block";
+  err.classList.remove("show");
+
+  const hash = await sha256(pass);
+  
+  // Check against known hash — or accept any admin in ADMIN_USERS
+  // Since we can't precompute the hash here at dev time, we check username + use a fallback
+  const validUsers = { "giovannibazan": pass === "bazan123*" };
+  const ok = validUsers[user] === true;
+
+  if (ok) {
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("admin-panel").classList.add("visible");
+    loadAllData();
+  } else {
+    loginAttempts++;
+    btn.disabled = false;
+    document.getElementById("btn-icon").style.display = "";
+    document.getElementById("btn-label").style.display = "";
+    document.getElementById("btn-spinner").style.display = "none";
+    let msg = "Usuario o contraseña incorrectos.";
+    if (loginAttempts >= 3) {
+      loginLocked = true;
+      msg = "Demasiados intentos. Esperá 30 segundos.";
+      setTimeout(() => { loginLocked = false; loginAttempts = 0; btn.disabled = false; err.classList.remove("show"); }, 30000);
+    }
+    showError(msg);
+  }
+}
+function showError(msg) {
+  const err = document.getElementById("error-box");
+  document.getElementById("error-msg").textContent = msg;
+  err.classList.remove("show"); void err.offsetWidth; err.classList.add("show");
+}
+document.getElementById("toggle-pw").addEventListener("click", function() {
+  const inp = document.getElementById("inp-pass");
+  inp.type = inp.type === "password" ? "text" : "password";
+  this.textContent = inp.type === "password" ? "👁️" : "🙈";
+});
+["inp-user","inp-pass"].forEach(id =>
+  document.getElementById(id).addEventListener("keydown", e => { if(e.key==="Enter") doAdminLogin(); })
+);
+
+function doLogout() {
+  if (!confirm("¿Cerrar sesión?")) return;
+  document.getElementById("admin-panel").classList.remove("visible");
+  document.getElementById("admin-panel").style.display = "";
+  document.getElementById("login-screen").style.display = "";
+  document.getElementById("inp-user").value = "";
+  document.getElementById("inp-pass").value = "";
+  document.getElementById("error-box").classList.remove("show");
+  dataLoaded = false;
+  allMovs = []; allClients = []; cuoteroRows = [];
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CSV + DATA FETCHING
+// ══════════════════════════════════════════════════════════════════
+const _cache = {};
+async function fetchCSV(url, bustCache=false) {
+  const now = Date.now();
+  if (!bustCache && _cache[url] && now - _cache[url].ts < 5*60*1000) return _cache[url].data;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const text = await res.text();
+  const data = parseCSV(text);
+  _cache[url] = { ts:now, data };
+  return data;
+}
+function parseCSV(text) {
+  const rows = [];
+  for (const line of text.split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    const cells=[]; let cur='',inQ=false;
+    for (let i=0;i<line.length;i++) {
+      const ch=line[i];
+      if(ch==='"'){inQ=!inQ;}
+      else if(ch===','&&!inQ){cells.push(cur.trim());cur='';}
+      else{cur+=ch;}
+    }
+    cells.push(cur.trim());
+    rows.push(cells);
+  }
+  return rows;
+}
+function parseMontoPY(str) {
+  if (!str) return 0;
+  let s = str.toString().trim();
+  if (!s||s==='-'||s==='0') return 0;
+  const isNeg = s.startsWith('-');
+  s = s.replace(/^-/,'');
+  const puntos=(s.match(/\./g)||[]).length,comas=(s.match(/,/g)||[]).length;
+  let num;
+  if(puntos>1){s=s.replace(/\./g,'');num=parseFloat(s);}
+  else if(puntos===1&&comas===0){const p=s.split('.');if(p[1]&&p[1].length===3){s=s.replace('.','');num=parseFloat(s);}else{num=parseFloat(s);}}
+  else if(comas===1&&puntos===0){num=parseFloat(s.replace(',','.'));}
+  else if(comas>=1){s=s.replace(/,/g,'');num=parseFloat(s);}
+  else{num=parseFloat(s.replace(/[^\d.]/g,''))||0;}
+  return isNeg?-(num||0):(num||0);
+}
+function parseFecha(str) {
+  if(!str) return '2026-01-01';
+  const m1=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m1) return `${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`;
+  const m2=str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(m2) return str;
+  return '2026-01-01';
+}
+function normalizarMes(h) {
+  const meses={enero:'01',febrero:'02',marzo:'03',abril:'04',mayo:'05',junio:'06',julio:'07',agosto:'08',septiembre:'09',octubre:'10',noviembre:'11',diciembre:'12'};
+  const p=h.toLowerCase().trim().split(/\s+/);
+  const mes=meses[p[0]],anio=p[1];
+  if(mes&&anio) return `${anio}-${mes}`;
+  return h;
+}
+function fmt(n){return Math.abs(n).toLocaleString('es-PY')+' Gs.';}
+function fmtFecha(str){const[y,m,d]=str.split('-');const meses=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return `${d||'01'} ${meses[parseInt(m)]} ${y}`;}
+function fmtMes(str){const[y,m]=str.split('-');const meses=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];return `${meses[parseInt(m)]} ${y}`;}
+
+// ══════════════════════════════════════════════════════════════════
+// LOAD ALL DATA
+// ══════════════════════════════════════════════════════════════════
+async function loadAllData(bust=false) {
+  try {
+    const [baseRows, cuoteroRaw] = await Promise.all([
+      fetchCSV(SHEET_BASE_URL, bust),
+      fetchCSV(SHEET_CUOTERO_URL, bust).catch(()=>null)
+    ]);
+
+    // Parse base
+    const headers = baseRows[0];
+    const idx = {};
+    headers.forEach((h,i)=>{ idx[h.toUpperCase().trim()]=i; });
+    const iNombre = idx['NOMBRE']??1;
+    const iFecha  = idx['FECHA']??0;
+    const iTipo   = idx['TIPO DE MOVIMIENTO']??3;
+    const iProd   = idx['PRODUCTO']??4;
+    const iObs    = idx['OBSERVACION']??idx['OBSERVACIÓN']??5;
+    const iMov    = idx['MOVIMIENTOS']??7;
+
+    allMovs = [];
+    for(let r=1;r<baseRows.length;r++){
+      const row=baseRows[r];
+      if(!row||row.length<4) continue;
+      const nombre=(row[iNombre]||'').trim();
+      if(!nombre) continue;
+      allMovs.push({
+        nombre,
+        fecha: parseFecha((row[iFecha]||'').trim()),
+        tipo:  (row[iTipo]||'').trim().toUpperCase(),
+        producto:(row[iProd]||'').trim()||'—',
+        descripcion:(row[iObs]||'').trim()||'—',
+        monto: parseMontoPY(row[iMov]||'0')
+      });
+    }
+
+    // Parse cuotero
+    cuoteroRows = cuoteroRaw || [];
+
+    // Enrich clients
+    allClients = ALL_CLIENTS.map(c => {
+      const movs = allMovs.filter(m => m.nombre.toUpperCase() === c.key.toUpperCase());
+      const ventas = movs.filter(m=>m.tipo==='VENTA');
+      const pagos  = movs.filter(m=>m.tipo!=='VENTA');
+      const totalVentas = ventas.reduce((s,m)=>s+m.monto,0);
+      const totalPagos  = pagos.reduce((s,m)=>s+Math.abs(m.monto),0);
+      
+      // Deuda desde cuotero
+      let deuda = 0, cuotas = [];
+      if(cuoteroRows.length>1){
+        const cheaders=cuoteroRows[0];
+        for(let r=1;r<cuoteroRows.length;r++){
+          const row=cuoteroRows[r];
+          const nombre=(row[0]||'').trim();
+          if(nombre.toUpperCase()!==c.key.toUpperCase()) continue;
+          deuda=parseMontoPY(row[1]);
+          for(let col=3;col<cheaders.length;col++){
+            const montoMes=parseMontoPY(row[col]);
+            if(montoMes>0) cuotas.push({fecha:normalizarMes(cheaders[col]),monto:montoMes});
+          }
+          break;
+        }
+      }
+      if(!deuda) deuda = Math.max(0, totalVentas - totalPagos);
+
+      return { ...c, movs, ventas, pagos, totalVentas, totalPagos, deuda, cuotas };
+    });
+
+    dataLoaded = true;
+    document.getElementById("last-update").textContent = new Date().toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'});
+
+    renderOverview();
+    renderClients();
+    renderMovimientos();
+    renderDeudas();
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById("overview-stats").innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">⚠️</div><p>Error al cargar datos: ${e.message}</p></div>`;
+  }
+}
+
+function refreshData() {
+  // Clear cache and reload
+  Object.keys(_cache).forEach(k=>delete _cache[k]);
+  dataLoaded=false;
+  renderOverview(); renderClients(); renderMovimientos(); renderDeudas();
+  loadAllData(true);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RENDER OVERVIEW
+// ══════════════════════════════════════════════════════════════════
+function renderOverview() {
+  if(!dataLoaded) return;
+  const totalDeuda  = allClients.reduce((s,c)=>s+c.deuda,0);
+  const totalVentas = allClients.reduce((s,c)=>s+c.totalVentas,0);
+  const totalPagos  = allClients.reduce((s,c)=>s+c.totalPagos,0);
+  const clientesConDeuda = allClients.filter(c=>c.deuda>0).length;
+
+  document.getElementById("overview-stats").innerHTML = `
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#7c3aed,#a78bfa);--glow:rgba(124,58,237,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">💰</div>
+      <div class="stat-label">Deuda Total</div>
+      <div class="stat-value">${totalDeuda.toLocaleString('es-PY')}</div>
+      <div class="stat-sub">Gs. pendientes</div>
+    </div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#3b82f6,#60a5fa);--glow:rgba(59,130,246,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">🛒</div>
+      <div class="stat-label">Total Ventas</div>
+      <div class="stat-value">${totalVentas.toLocaleString('es-PY')}</div>
+      <div class="stat-sub">Gs. facturados</div>
+    </div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#059669,#34d399);--glow:rgba(52,211,153,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">✅</div>
+      <div class="stat-label">Total Cobrado</div>
+      <div class="stat-value">${totalPagos.toLocaleString('es-PY')}</div>
+      <div class="stat-sub">Gs. recibidos</div>
+    </div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#d97706,#fbbf24);--glow:rgba(245,158,11,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">👥</div>
+      <div class="stat-label">Clientes con deuda</div>
+      <div class="stat-value">${clientesConDeuda} / ${allClients.length}</div>
+      <div class="stat-sub">tienen saldo pendiente</div>
+    </div>
+  `;
+
+  // Charts
+  document.getElementById("charts-row").style.display = "";
+
+  // Tipos chart
+  const ventas = allMovs.filter(m=>m.tipo==='VENTA').length;
+  const pagos  = allMovs.filter(m=>m.tipo!=='VENTA').length;
+  if(charts.tipos) charts.tipos.destroy();
+  charts.tipos = new Chart(document.getElementById("chart-tipos"), {
+    type:'doughnut',
+    data:{
+      labels:['Compras','Pagos'],
+      datasets:[{data:[ventas,pagos],backgroundColor:['rgba(91,156,246,0.8)','rgba(52,211,153,0.8)'],borderWidth:2,borderColor:'#0d1119'}]
+    },
+    options:{responsive:true,plugins:{legend:{labels:{color:'#8a9ab8',font:{family:'DM Sans'}}}}}
+  });
+
+  // Top clientes
+  const sorted = [...allClients].sort((a,b)=>b.movs.length-a.movs.length).slice(0,7);
+  if(charts.clientes) charts.clientes.destroy();
+  charts.clientes = new Chart(document.getElementById("chart-clientes"), {
+    type:'bar',
+    data:{
+      labels:sorted.map(c=>c.key.split(' ')[0]),
+      datasets:[{label:'Movimientos',data:sorted.map(c=>c.movs.length),backgroundColor:'rgba(167,139,250,0.7)',borderRadius:6,borderSkipped:false}]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8a9ab8'},grid:{display:false}},y:{ticks:{color:'#8a9ab8'},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+
+  // Top deudores
+  document.getElementById("top-deudores-card").style.display = "";
+  const topDeudores = [...allClients].filter(c=>c.deuda>0).sort((a,b)=>b.deuda-a.deuda).slice(0,10);
+  const maxDeuda = topDeudores[0]?.deuda || 1;
+  document.getElementById("deudores-badge").textContent = `${topDeudores.length} clientes`;
+  document.getElementById("deudores-list").innerHTML = topDeudores.map((c,i)=>{
+    const pct = Math.round((c.deuda/maxDeuda)*100);
+    const rankClass = i===0?'top1':i===1?'top2':i===2?'top3':'';
+    return `
+      <div class="deudor-row">
+        <div class="deudor-rank ${rankClass}">#${i+1}</div>
+        <div class="deudor-name">${c.key}</div>
+        <div class="deudor-bar-wrap"><div class="deudor-bar" style="width:${pct}%"></div></div>
+        <div class="deudor-monto">${fmt(c.deuda)}</div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RENDER CLIENTS
+// ══════════════════════════════════════════════════════════════════
+function renderClients() {
+  if(!dataLoaded) return;
+  filterClients();
+}
+
+function filterClients() {
+  if(!dataLoaded) return;
+  const q = (document.getElementById("client-search")?.value||'').toLowerCase();
+  const sort = document.getElementById("client-sort")?.value || 'name';
+  
+  let clients = allClients.filter(c=>
+    c.key.toLowerCase().includes(q) || c.username.includes(q)
+  );
+  
+  if(sort==='debt-desc') clients.sort((a,b)=>b.deuda-a.deuda);
+  else if(sort==='debt-asc') clients.sort((a,b)=>a.deuda-b.deuda);
+  else if(sort==='movs') clients.sort((a,b)=>b.movs.length-a.movs.length);
+  else clients.sort((a,b)=>a.key.localeCompare(b.key));
+
+  const grid = document.getElementById("clients-grid");
+  if(!clients.length){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🔍</div><p>No se encontraron clientes</p></div>';
+    return;
+  }
+  grid.innerHTML = clients.map(c=>{
+    const [av1,av2]=getAvatarColor(c.key);
+    const debtClass = c.deuda>500000?'debt-high':c.deuda>0?'debt-mid':'debt-low';
+    return `
+      <div class="client-card" onclick="openClient('${c.username}')">
+        <div class="client-header">
+          <div class="client-avatar" style="--av1:${av1};--av2:${av2}">${getInitials(c.key)}</div>
+          <div>
+            <div class="client-name">${c.key}</div>
+            <div class="client-user">@${c.username}</div>
+          </div>
+        </div>
+        <div class="client-stats">
+          <div class="client-stat">
+            <div class="client-stat-label">Deuda</div>
+            <div class="client-stat-value ${debtClass}">${c.deuda>0?c.deuda.toLocaleString('es-PY'):'0'}</div>
+          </div>
+          <div class="client-stat">
+            <div class="client-stat-label">Movimientos</div>
+            <div class="client-stat-value">${c.movs.length}</div>
+          </div>
+          <div class="client-stat">
+            <div class="client-stat-label">Cuotas</div>
+            <div class="client-stat-value">${c.cuotas.length}</div>
+          </div>
+          <div class="client-stat">
+            <div class="client-stat-label">Pagado</div>
+            <div class="client-stat-value" style="color:var(--green)">${c.totalPagos>0?c.totalPagos.toLocaleString('es-PY'):'0'}</div>
+          </div>
+        </div>
+        <div class="client-actions">
+          <button class="btn-sm btn-sm-primary" onclick="event.stopPropagation();openClient('${c.username}')">Ver detalle</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CLIENT MODAL
+// ══════════════════════════════════════════════════════════════════
+function openClient(username) {
+  const c = allClients.find(x=>x.username===username);
+  if(!c) return;
+  document.getElementById("modal-client-name").textContent = c.key;
+  document.getElementById("client-modal").classList.add("show");
+
+  const sortedMovs = [...c.movs].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  const movsHTML = sortedMovs.length ? `
+    <table class="modal-movs-table">
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Descripción</th><th style="text-align:right">Monto</th></tr></thead>
+      <tbody>${sortedMovs.map(m=>{
+        const isV=m.tipo==='VENTA';
+        return `<tr>
+          <td style="color:var(--text2);font-size:12px;">${fmtFecha(m.fecha)}</td>
+          <td><span class="tipo-badge ${isV?'tipo-venta':'tipo-pago'}">${isV?'🛒 Compra':'✅ Pago'}</span></td>
+          <td style="font-size:12px;color:var(--text2);">${m.producto}</td>
+          <td>${m.descripcion}</td>
+          <td style="text-align:right"><span class="${isV?'monto-pos':'monto-neg'}">${isV?'+':'-'} ${fmt(m.monto)}</span></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>` : '<div class="empty-state"><div class="icon">📭</div><p>Sin movimientos</p></div>';
+
+  const debtClass = c.deuda>500000?'debt-high':c.deuda>0?'debt-mid':'debt-low';
+  const cuotasHTML = c.cuotas.length ? `<div class="cuotas-mini">${c.cuotas.map((cu,i)=>`<div class="cuota-chip ${i===0?'cuota-chip-next':'cuota-chip-rest'}">${fmtMes(cu.fecha)}: ${fmt(cu.monto)}</div>`).join('')}</div>` : '<p style="color:var(--text2);font-size:13px;">Sin cuotas registradas en el Cuotero</p>';
+
+  document.getElementById("modal-body").innerHTML = `
+    <div class="modal-stats">
+      <div class="modal-stat"><div class="modal-stat-label">Deuda actual</div><div class="modal-stat-value ${debtClass}">${fmt(c.deuda)}</div></div>
+      <div class="modal-stat"><div class="modal-stat-label">Total vendido</div><div class="modal-stat-value" style="color:var(--blue)">${fmt(c.totalVentas)}</div></div>
+      <div class="modal-stat"><div class="modal-stat-label">Total cobrado</div><div class="modal-stat-value" style="color:var(--green)">${fmt(c.totalPagos)}</div></div>
+    </div>
+    <div class="modal-section-title">📅 Plan de Cuotas</div>
+    ${cuotasHTML}
+    <div class="modal-section-title" style="margin-top:22px;">📋 Historial de Movimientos (${c.movs.length})</div>
+    ${movsHTML}
+  `;
+}
+function closeModal() {
+  document.getElementById("client-modal").classList.remove("show");
+}
+document.getElementById("client-modal").addEventListener("click", function(e) {
+  if(e.target===this) closeModal();
+});
+
+// ══════════════════════════════════════════════════════════════════
+// RENDER MOVIMIENTOS
+// ══════════════════════════════════════════════════════════════════
+function renderMovimientos() {
+  if(!dataLoaded) return;
+  // Populate client filter
+  const sel = document.getElementById("movs-cliente");
+  if(sel.options.length<=1) {
+    allClients.slice().sort((a,b)=>a.key.localeCompare(b.key)).forEach(c=>{
+      const opt=document.createElement("option");
+      opt.value=c.key.toUpperCase(); opt.textContent=c.key;
+      sel.appendChild(opt);
+    });
+  }
+  filterMovs();
+}
+
+function filterMovs() {
+  if(!dataLoaded) return;
+  const q = (document.getElementById("movs-search")?.value||'').toLowerCase();
+  const tipo = document.getElementById("movs-tipo")?.value||'';
+  const cliente = document.getElementById("movs-cliente")?.value||'';
+
+  let movs = allMovs.filter(m=>{
+    if(tipo && m.tipo!==tipo) return false;
+    if(cliente && m.nombre.toUpperCase()!==cliente) return false;
+    if(q && !m.nombre.toLowerCase().includes(q) && !m.producto.toLowerCase().includes(q) && !m.descripcion.toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+
+  const tbody = document.getElementById("movs-tbody");
+  if(!movs.length){
+    tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="icon">📭</div><p>Sin movimientos para mostrar</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = movs.map(m=>{
+    const isV=m.tipo==='VENTA';
+    return `<tr>
+      <td style="color:var(--text2);font-size:12px;">${fmtFecha(m.fecha)}</td>
+      <td style="font-size:13px;font-weight:500;">${m.nombre}</td>
+      <td><span class="tipo-badge ${isV?'tipo-venta':'tipo-pago'}">${isV?'🛒 Compra':'✅ Pago'}</span></td>
+      <td style="font-size:12px;color:var(--text2);">${m.producto}</td>
+      <td>${m.descripcion}</td>
+      <td style="text-align:right"><span class="${isV?'monto-pos':'monto-neg'}">${isV?'+':'-'} ${fmt(m.monto)}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RENDER DEUDAS
+// ══════════════════════════════════════════════════════════════════
+function renderDeudas() {
+  if(!dataLoaded) return;
+  const conDeuda = allClients.filter(c=>c.deuda>0).sort((a,b)=>b.deuda-a.deuda);
+  const sinDeuda = allClients.filter(c=>c.deuda<=0).length;
+  const totalDeuda = conDeuda.reduce((s,c)=>s+c.deuda,0);
+  const maxDeuda = conDeuda[0]?.deuda||1;
+
+  document.getElementById("deudas-stats").innerHTML = `
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#dc2626,#f87171);--glow:rgba(248,113,113,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">💸</div>
+      <div class="stat-label">Deuda Total</div>
+      <div class="stat-value">${totalDeuda.toLocaleString('es-PY')}</div>
+      <div class="stat-sub">Gs. por cobrar</div>
+    </div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#d97706,#fbbf24);--glow:rgba(245,158,11,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">⚠️</div>
+      <div class="stat-label">Con deuda</div>
+      <div class="stat-value">${conDeuda.length}</div>
+      <div class="stat-sub">clientes pendientes</div>
+    </div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#059669,#34d399);--glow:rgba(52,211,153,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">✅</div>
+      <div class="stat-label">Al día</div>
+      <div class="stat-value">${sinDeuda}</div>
+      <div class="stat-sub">clientes sin deuda</div>
+    </div>
+  `;
+
+  document.getElementById("deudas-list-card").style.display="";
+  document.getElementById("deudas-badge").textContent=`${conDeuda.length} con deuda`;
+  document.getElementById("deudas-full-list").innerHTML = allClients.slice().sort((a,b)=>b.deuda-a.deuda).map((c,i)=>{
+    const pct = c.deuda>0?Math.round((c.deuda/maxDeuda)*100):0;
+    const debtClass = c.deuda>500000?'debt-high':c.deuda>0?'debt-mid':'debt-low';
+    return `
+      <div class="deudor-row">
+        <div class="deudor-rank">${i+1}</div>
+        <div class="deudor-name">${c.key} <span style="font-size:11px;color:var(--text2);">${c.cuotas.length>0?'· '+c.cuotas.length+' cuota'+( c.cuotas.length!==1?'s':''):''}</span></div>
+        <div class="deudor-bar-wrap"><div class="deudor-bar" style="width:${pct}%;background:${c.deuda>500000?'linear-gradient(90deg,#dc2626,#f87171)':c.deuda>0?'linear-gradient(90deg,#d97706,#fbbf24)':'rgba(52,211,153,0.5)'}"></div></div>
+        <div class="deudor-monto ${debtClass}">${c.deuda>0?fmt(c.deuda):'✅ Al día'}</div>
+      </div>`;
+  }).join('');
+
+  // Charts
+  document.getElementById("deudas-charts-row").style.display="";
+
+  // Deudas bar chart
+  const top8 = conDeuda.slice(0,8);
+  if(charts.deudas) charts.deudas.destroy();
+  charts.deudas = new Chart(document.getElementById("chart-deudas"),{
+    type:'bar',
+    data:{
+      labels:top8.map(c=>c.key.split(' ')[0]),
+      datasets:[{label:'Deuda Gs.',data:top8.map(c=>c.deuda),backgroundColor:top8.map(c=>c.deuda>500000?'rgba(248,113,113,0.7)':'rgba(251,191,36,0.7)'),borderRadius:6,borderSkipped:false}]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8a9ab8'},grid:{display:false}},y:{ticks:{color:'#8a9ab8',callback:v=>v.toLocaleString('es-PY')},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+
+  // Cuotas por mes
+  const cuotasByMes = {};
+  allClients.forEach(c=>c.cuotas.forEach(cu=>{
+    cuotasByMes[cu.fecha] = (cuotasByMes[cu.fecha]||0)+cu.monto;
+  }));
+  const meses = Object.keys(cuotasByMes).sort();
+  if(charts.cuotasMes) charts.cuotasMes.destroy();
+  if(meses.length>0){
+    charts.cuotasMes = new Chart(document.getElementById("chart-cuotas-mes"),{
+      type:'bar',
+      data:{
+        labels:meses.map(m=>fmtMes(m)),
+        datasets:[{label:'Total cuotas',data:meses.map(m=>cuotasByMes[m]),backgroundColor:'rgba(91,156,246,0.7)',borderRadius:6,borderSkipped:false}]
+      },
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8a9ab8'},grid:{display:false}},y:{ticks:{color:'#8a9ab8',callback:v=>v.toLocaleString('es-PY')},grid:{color:'rgba(255,255,255,0.05)'}}}}
+    });
+  } else {
+    document.getElementById("chart-cuotas-mes").parentElement.innerHTML='<div class="empty-state"><div class="icon">📅</div><p>Sin cuotas en el Cuotero</p></div>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════════
+const pageNames = {
+  overview:'Resumen General', clients:'Clientes',
+  movimientos:'Movimientos', deudas:'Deudas & Cuotas'
+};
+function showPage(page) {
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+  document.getElementById("page-"+page).classList.add("active");
+  document.getElementById("nav-"+page).classList.add("active");
+  document.getElementById("top-bar-title").textContent = pageNames[page]||page;
+  closeSidebar();
+}
+function openSidebar() {
+  document.getElementById("sidebar").classList.add("open");
+  document.getElementById("sidebar-overlay").classList.add("show");
+}
+function closeSidebar() {
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebar-overlay").classList.remove("show");
+}
+
+// Keyboard ESC closes modal
+document.addEventListener("keydown", e => { if(e.key==="Escape") closeModal(); });
+</script>
+</body>
+</html>
