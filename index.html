@@ -710,17 +710,23 @@ async function loadAllData(bust=false) {
       const ventas = movs.filter(m=>m.tipo==='VENTA');
       const pagos  = movs.filter(m=>m.tipo!=='VENTA');
       const totalVentas = ventas.reduce((s,m)=>s+m.monto,0);
+      // Los pagos en el Sheet vienen con signo negativo en la col MOVIMIENTOS
+      // Math.abs para mostrar cuánto pagó el cliente
       const totalPagos  = pagos.reduce((s,m)=>s+Math.abs(m.monto),0);
-      
-      // Deuda desde cuotero
-      let deuda = 0, cuotas = [];
+
+      // DEUDA REAL: suma de TODOS los montos del Sheet base
+      // (ventas son positivas, pagos son negativos → resultado = saldo pendiente)
+      // Esta es la fuente de verdad — refleja pagos en tiempo real
+      const deudaSheet = Math.max(0, movs.reduce((s,m)=>s+m.monto, 0));
+
+      // Cuotas futuras: vienen del Cuotero (solo para el plan de pagos)
+      let cuotas = [];
       if(cuoteroRows.length>1){
         const cheaders=cuoteroRows[0];
         for(let r=1;r<cuoteroRows.length;r++){
           const row=cuoteroRows[r];
           const nombre=(row[0]||'').trim();
           if(nombre.toUpperCase()!==c.key.toUpperCase()) continue;
-          deuda=parseMontoPY(row[1]);
           for(let col=3;col<cheaders.length;col++){
             const montoMes=parseMontoPY(row[col]);
             if(montoMes>0) cuotas.push({fecha:normalizarMes(cheaders[col]),monto:montoMes});
@@ -728,7 +734,9 @@ async function loadAllData(bust=false) {
           break;
         }
       }
-      if(!deuda) deuda = Math.max(0, totalVentas - totalPagos);
+
+      // Deuda final: siempre desde el Sheet base (refleja pagos actualizados)
+      const deuda = deudaSheet;
 
       return { ...c, movs, ventas, pagos, totalVentas, totalPagos, deuda, cuotas };
     });
