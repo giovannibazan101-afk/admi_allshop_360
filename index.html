@@ -306,6 +306,9 @@ canvas{display:block;}
       <div class="nav-item" onclick="showPage('deudas')" id="nav-deudas">
         <span class="nav-item-icon">💰</span> Deudas & Cuotas
       </div>
+      <div class="nav-item" onclick="showPage('ganancias')" id="nav-ganancias">
+        <span class="nav-item-icon">📈</span> Ganancias
+      </div>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-user">
@@ -441,10 +444,36 @@ canvas{display:block;}
             <div class="chart-wrap"><canvas id="chart-cuotas-mes" height="220"></canvas></div>
           </div>
         </div>
+      </div><!-- end page-deudas -->
+
+      <!-- GANANCIAS -->
+      <div class="page" id="page-ganancias">
+        <div class="overview-stats" id="ganancias-stats" style="grid-template-columns:repeat(3,1fr);">
+          <div class="loading-state" style="grid-column:1/-1;">
+            <div class="loading-spinner-wrap"><div class="loading-spinner"></div></div>
+            <div class="loading-label">Cargando ganancias…</div>
+          </div>
+        </div>
+        <div class="charts-row" id="ganancias-charts-row" style="display:none;">
+          <div class="chart-card">
+            <div class="chart-title">📅 Tendencia de Ganancias por Mes</div>
+            <div class="chart-wrap"><canvas id="chart-ganancias-mes" height="220"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">🏷️ Ganancias por Categoría</div>
+            <div class="chart-wrap"><canvas id="chart-ganancias-categoria" height="220"></canvas></div>
+          </div>
+        </div>
+        <div class="charts-row" id="ganancias-charts-row2" style="display:none;grid-template-columns:1fr;">
+          <div class="chart-card">
+            <div class="chart-title">👥 Ganancias por Cliente (Top 10)</div>
+            <div class="chart-wrap"><canvas id="chart-ganancias-cliente" height="200"></canvas></div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
+    </div><!-- end page-content -->
+  </div><!-- end main-area -->
+</div><!-- end admin-panel -->
 
 <!-- ══ MODAL CLIENTE ══ -->
 <div id="client-modal">
@@ -678,12 +707,13 @@ async function loadAllData(bust=false) {
     const headers = baseRows[0];
     const idx = {};
     headers.forEach((h,i)=>{ idx[h.toUpperCase().trim()]=i; });
-    const iNombre = idx['NOMBRE']??1;
-    const iFecha  = idx['FECHA']??0;
-    const iTipo   = idx['TIPO DE MOVIMIENTO']??3;
-    const iProd   = idx['PRODUCTO']??4;
-    const iObs    = idx['OBSERVACION']??idx['OBSERVACIÓN']??5;
-    const iMov    = idx['MOVIMIENTOS']??7;
+    const iNombre   = idx['NOMBRE']??1;
+    const iFecha    = idx['FECHA']??0;
+    const iTipo     = idx['TIPO DE MOVIMIENTO']??3;
+    const iProd     = idx['PRODUCTO']??4;
+    const iObs      = idx['OBSERVACION']??idx['OBSERVACIÓN']??5;
+    const iMov      = idx['MOVIMIENTOS']??7;
+    const iGanancia = idx['GANANCIA']??idx['GANANCIAS']??11; // columna L = índice 11
 
     allMovs = [];
     for(let r=1;r<baseRows.length;r++){
@@ -697,7 +727,8 @@ async function loadAllData(bust=false) {
         tipo:  (row[iTipo]||'').trim().toUpperCase(),
         producto:(row[iProd]||'').trim()||'—',
         descripcion:(row[iObs]||'').trim()||'—',
-        monto: parseMontoPY(row[iMov]||'0')
+        monto: parseMontoPY(row[iMov]||'0'),
+        ganancia: parseMontoPY(row[iGanancia]||'0')
       });
     }
 
@@ -748,6 +779,7 @@ async function loadAllData(bust=false) {
     renderClients();
     renderMovimientos();
     renderDeudas();
+    renderGanancias();
 
   } catch(e) {
     console.error(e);
@@ -759,7 +791,7 @@ function refreshData() {
   // Clear cache and reload
   Object.keys(_cache).forEach(k=>delete _cache[k]);
   dataLoaded=false;
-  renderOverview(); renderClients(); renderMovimientos(); renderDeudas();
+  renderOverview(); renderClients(); renderMovimientos(); renderDeudas(); renderGanancias();
   loadAllData(true);
 }
 
@@ -797,6 +829,12 @@ function renderOverview() {
       <div class="stat-label">Clientes con deuda</div>
       <div class="stat-value">${clientesConDeuda} / ${allClients.length}</div>
       <div class="stat-sub">tienen saldo pendiente</div>
+    </div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#059669,#34d399);--glow:rgba(52,211,153,0.15);cursor:pointer;" onclick="showPage('ganancias')">
+      <div class="stat-glow"></div><div class="stat-icon">💵</div>
+      <div class="stat-label">Ganancia Total (columna L)</div>
+      <div class="stat-value">${allMovs.filter(m=>m.tipo==='VENTA'&&m.ganancia>0).reduce((s,m)=>s+m.ganancia,0).toLocaleString('es-PY')}</div>
+      <div class="stat-sub">Gs. de utilidad · <span style="color:var(--teal);">Ver desglose →</span></div>
     </div>
   `;
 
@@ -1087,11 +1125,187 @@ function renderDeudas() {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// RENDER GANANCIAS
+// ══════════════════════════════════════════════════════════════════
+function clasificarCategoria(mov) {
+  const prod = (mov.producto||'').toLowerCase();
+  const desc = (mov.descripcion||'').toLowerCase();
+  const txt  = prod + ' ' + desc;
+  if (/facultad|ropa|buzo|remera|camiseta|calza|vestido|camisa|pantalon|short|jean|musculosa/.test(txt)) return 'Facultad';
+  if (/trabajo|uniforme|guardapolvo|overol|camper|chaleco/.test(txt)) return 'Trabajo';
+  return 'Otro';
+}
+
+function renderGanancias() {
+  if(!dataLoaded) return;
+
+  const movsConGanancia = allMovs.filter(m => m.tipo==='VENTA' && m.ganancia > 0);
+  const totalGanancias  = movsConGanancia.reduce((s,m)=>s+m.ganancia,0);
+  const totalVentas     = allMovs.filter(m=>m.tipo==='VENTA').reduce((s,m)=>s+m.monto,0);
+  const margen          = totalVentas>0 ? ((totalGanancias/totalVentas)*100).toFixed(1) : 0;
+
+  // ── Stats
+  document.getElementById("ganancias-stats").innerHTML = `
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#059669,#34d399);--glow:rgba(52,211,153,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">💵</div>
+      <div class="stat-label">Ganancia Total</div>
+      <div class="stat-value">${totalGanancias.toLocaleString('es-PY')}</div>
+      <div class="stat-sub">Gs. de utilidad</div>
+    </div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#3b82f6,#60a5fa);--glow:rgba(59,130,246,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">📦</div>
+      <div class="stat-label">Ventas con ganancia</div>
+      <div class="stat-value">${movsConGanancia.length}</div>
+      <div class="stat-sub">de ${allMovs.filter(m=>m.tipo==='VENTA').length} ventas totales</div>
+    </div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#a78bfa,#7c3aed);--glow:rgba(167,139,250,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">📊</div>
+      <div class="stat-label">Margen promedio</div>
+      <div class="stat-value">${margen}%</div>
+      <div class="stat-sub">sobre el total vendido</div>
+    </div>
+  `;
+
+  document.getElementById("ganancias-charts-row").style.display  = "";
+  document.getElementById("ganancias-charts-row2").style.display = "";
+
+  // ── Ganancias por Mes + Línea de tendencia
+  const ganByMes = {};
+  movsConGanancia.forEach(m=>{
+    const mes = m.fecha.substring(0,7); // YYYY-MM
+    ganByMes[mes] = (ganByMes[mes]||0) + m.ganancia;
+  });
+  const meses = Object.keys(ganByMes).sort();
+  const valsMes = meses.map(m=>ganByMes[m]);
+
+  // Tendencia lineal (regresión simple)
+  const n = valsMes.length;
+  let sumX=0,sumY=0,sumXY=0,sumX2=0;
+  valsMes.forEach((v,i)=>{sumX+=i;sumY+=v;sumXY+=i*v;sumX2+=i*i;});
+  const slope  = n>1 ? (n*sumXY - sumX*sumY)/(n*sumX2 - sumX*sumX) : 0;
+  const interc = n>1 ? (sumY - slope*sumX)/n : (valsMes[0]||0);
+  const tendencia = valsMes.map((_,i)=>Math.round(interc + slope*i));
+
+  if(charts.ganMes) charts.ganMes.destroy();
+  charts.ganMes = new Chart(document.getElementById("chart-ganancias-mes"),{
+    type:'bar',
+    data:{
+      labels: meses.map(m=>fmtMes(m)),
+      datasets:[
+        {
+          type:'bar',
+          label:'Ganancia mensual',
+          data: valsMes,
+          backgroundColor:'rgba(52,211,153,0.55)',
+          borderRadius:6,
+          borderSkipped:false,
+          order:2
+        },
+        {
+          type:'line',
+          label:'Tendencia',
+          data: tendencia,
+          borderColor:'rgba(167,139,250,0.9)',
+          backgroundColor:'transparent',
+          borderWidth:2.5,
+          borderDash:[6,4],
+          pointRadius:4,
+          pointBackgroundColor:'rgba(167,139,250,0.9)',
+          tension:0.3,
+          order:1
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{labels:{color:'#8a9ab8',font:{family:'DM Sans',size:11}}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('es-PY')} Gs.`}}
+      },
+      scales:{
+        x:{ticks:{color:'#8a9ab8'},grid:{display:false}},
+        y:{ticks:{color:'#8a9ab8',callback:v=>v.toLocaleString('es-PY')},grid:{color:'rgba(255,255,255,0.05)'}}
+      }
+    }
+  });
+
+  // ── Ganancias por Categoría (Trabajo / Facultad / Otro)
+  const ganCat = {};
+  movsConGanancia.forEach(m=>{
+    const cat = clasificarCategoria(m);
+    ganCat[cat] = (ganCat[cat]||0) + m.ganancia;
+  });
+  const catLabels = Object.keys(ganCat);
+  const catVals   = catLabels.map(k=>ganCat[k]);
+  const catColors = catLabels.map(k=>
+    k==='Trabajo' ? 'rgba(59,130,246,0.75)' :
+    k==='Facultad'? 'rgba(167,139,250,0.75)' :
+                    'rgba(245,158,11,0.75)'
+  );
+
+  if(charts.ganCat) charts.ganCat.destroy();
+  charts.ganCat = new Chart(document.getElementById("chart-ganancias-categoria"),{
+    type:'doughnut',
+    data:{
+      labels: catLabels,
+      datasets:[{
+        data: catVals,
+        backgroundColor: catColors,
+        borderWidth:2,
+        borderColor:'#0d1119'
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{labels:{color:'#8a9ab8',font:{family:'DM Sans',size:12}}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed.toLocaleString('es-PY')} Gs.`}}
+      }
+    }
+  });
+
+  // ── Ganancias por Cliente (Top 10)
+  const ganCliente = {};
+  movsConGanancia.forEach(m=>{
+    ganCliente[m.nombre] = (ganCliente[m.nombre]||0) + m.ganancia;
+  });
+  const topClientes = Object.entries(ganCliente).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  if(charts.ganCliente) charts.ganCliente.destroy();
+  charts.ganCliente = new Chart(document.getElementById("chart-ganancias-cliente"),{
+    type:'bar',
+    data:{
+      labels: topClientes.map(([k])=>k.split(' ')[0]),
+      datasets:[{
+        label:'Ganancia Gs.',
+        data: topClientes.map(([,v])=>v),
+        backgroundColor: topClientes.map((_,i)=>`hsla(${200+i*18},70%,60%,0.72)`),
+        borderRadius:7,
+        borderSkipped:false
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>`${ctx.parsed.x.toLocaleString('es-PY')} Gs.`}}
+      },
+      scales:{
+        x:{ticks:{color:'#8a9ab8',callback:v=>v.toLocaleString('es-PY')},grid:{color:'rgba(255,255,255,0.05)'}},
+        y:{ticks:{color:'#8a9ab8'},grid:{display:false}}
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════════
 const pageNames = {
   overview:'Resumen General', clients:'Clientes',
-  movimientos:'Movimientos', deudas:'Deudas & Cuotas'
+  movimientos:'Movimientos', deudas:'Deudas & Cuotas',
+  ganancias:'Ganancias'
 };
 function showPage(page) {
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
@@ -1115,4 +1329,3 @@ document.addEventListener("keydown", e => { if(e.key==="Escape") closeModal(); }
 </script>
 </body>
 </html>
-
