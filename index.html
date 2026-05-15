@@ -37,10 +37,10 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;back
 .bg-glow-2{width:600px;height:600px;background:#a78bfa;bottom:-200px;right:-200px;}
 
 /* ── LOGIN ── */
-#login-screen{position:relative;z-index:10;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
-.login-wrap{width:100%;max-width:420px;animation:slideUp .7s cubic-bezier(.16,1,.3,1) both;}
+#login-screen{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto;}
+.login-wrap{width:100%;max-width:420px;animation:slideUp .7s cubic-bezier(.16,1,.3,1) both;margin:auto;}
 @keyframes slideUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
-.login-card{background:rgba(13,17,25,0.95);backdrop-filter:blur(32px);border:1px solid rgba(255,255,255,0.1);border-radius:28px;padding:48px 40px;box-shadow:0 0 0 1px rgba(91,156,246,0.06),0 50px 100px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.08);position:relative;overflow:hidden;}
+.login-card{background:rgba(13,17,25,0.95);backdrop-filter:blur(32px);border:1px solid rgba(255,255,255,0.1);border-radius:28px;padding:40px 36px;box-shadow:0 0 0 1px rgba(91,156,246,0.06),0 50px 100px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.08);position:relative;overflow:hidden;}
 .login-card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,0.9),rgba(91,156,246,0.5),transparent);}
 .admin-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:600;color:var(--purple);text-transform:uppercase;letter-spacing:.1em;margin-bottom:28px;}
 .login-title{font-family:'Fraunces',serif;font-size:30px;font-weight:700;line-height:1.1;margin-bottom:6px;letter-spacing:-1px;}
@@ -236,10 +236,77 @@ canvas{display:block;}
   .overview-stats{grid-template-columns:1fr 1fr;}
   .charts-row{grid-template-columns:1fr;}
   .clients-grid{grid-template-columns:1fr;}
-  .top-bar{padding:0 16px;}
-  .page-content{padding:16px;}
+  .top-bar{padding:0 14px;}
+  .page-content{padding:14px;}
   .mobile-menu-btn{display:flex!important;}
+
+  /* Login mobile */
+  #login-screen{padding:12px;align-items:flex-start;padding-top:max(20px, env(safe-area-inset-top, 20px));}
+  .login-card{padding:28px 22px;border-radius:22px;}
+  .login-title{font-size:24px;}
+  .admin-badge{margin-bottom:20px;}
+  .login-subtitle{margin-bottom:24px;}
+
+  /* Stats cards: 1 column on very small screens */
+  .overview-stats{grid-template-columns:1fr 1fr;gap:10px;}
+  .stat-card{padding:16px 14px;border-radius:16px;}
+  .stat-value{font-size:18px;word-break:break-all;}
+  .stat-label{font-size:10px;}
+  .stat-sub{font-size:11px;}
+
+  /* Deudor rows - hide bar, keep number visible */
+  .deudor-bar-wrap{display:none;}
+  .deudor-name{font-size:12.5px;}
+  .deudor-monto{font-size:12px;min-width:auto;}
+  .deudor-row{gap:8px;}
+
+  /* Movimientos table - scrollable */
+  .movs-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .movs-table{min-width:560px;}
+  .movs-table th,.movs-table td{padding:10px 12px;font-size:12px;}
+
+  /* Modal on mobile */
+  #client-modal{padding:0;align-items:flex-end;}
+  .modal-card{max-width:100%;border-radius:24px 24px 0 0;max-height:88vh;}
+  .modal-stats{grid-template-columns:1fr 1fr;}
+  .modal-stat-value{font-size:16px;}
+  .modal-header{padding:18px 20px 14px;}
+  .modal-body{padding:16px 20px 24px;}
+  .modal-movs-table{min-width:480px;}
+  .modal-movs-table th,.modal-movs-table td{padding:8px 10px;font-size:12px;}
+  .modal-section-title{font-size:14px;}
+
+  /* Top bar adjustments */
+  .top-bar-title{font-size:16px;}
+  .top-status span{display:none;}
+  .top-refresh-btn{padding:0 10px;font-size:11px;}
+
+  /* Toolbar filters stack vertically */
+  .clients-toolbar,.movs-toolbar{flex-direction:column;gap:8px;}
+  .search-wrap{width:100%;}
+  .filter-select{width:100%;height:40px;}
+
+  /* Deudas stats: 1 column */
+  #deudas-stats{grid-template-columns:1fr 1fr!important;}
+  #ganancias-stats{grid-template-columns:1fr 1fr!important;}
+
+  /* Chart cards */
+  .chart-card{padding:16px;}
+  .chart-title{font-size:13px;margin-bottom:12px;}
+
+  /* Client cards */
+  .client-card{padding:16px;}
+  .client-stat-value{font-size:13px;}
+  .client-name{font-size:13px;}
 }
+
+@media(max-width:400px){
+  .overview-stats{grid-template-columns:1fr;}
+  #deudas-stats{grid-template-columns:1fr!important;}
+  #ganancias-stats{grid-template-columns:1fr!important;}
+  .stat-value{font-size:20px;}
+}
+
 .mobile-menu-btn{display:none;width:36px;height:36px;align-items:center;justify-content:center;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);cursor:pointer;font-size:18px;color:var(--text2);}
 .sidebar-overlay{display:none;position:fixed;inset:0;z-index:29;background:rgba(0,0,0,0.5);}
 .sidebar-overlay.show{display:block;}
@@ -959,6 +1026,7 @@ function openClient(username) {
 
   const sortedMovs = [...c.movs].sort((a,b)=>b.fecha.localeCompare(a.fecha));
   const movsHTML = sortedMovs.length ? `
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
     <table class="modal-movs-table">
       <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Descripción</th><th style="text-align:right">Monto</th></tr></thead>
       <tbody>${sortedMovs.map(m=>{
@@ -971,7 +1039,8 @@ function openClient(username) {
           <td style="text-align:right"><span class="${isV?'monto-pos':'monto-neg'}">${isV?'+':'-'} ${fmt(m.monto)}</span></td>
         </tr>`;
       }).join('')}</tbody>
-    </table>` : '<div class="empty-state"><div class="icon">📭</div><p>Sin movimientos</p></div>';
+    </table>
+    </div>` : '<div class="empty-state"><div class="icon">📭</div><p>Sin movimientos</p></div>';
 
   const debtClass = c.deuda>500000?'debt-high':c.deuda>0?'debt-mid':'debt-low';
   const cuotasHTML = c.cuotas.length ? `<div class="cuotas-mini">${c.cuotas.map((cu,i)=>`<div class="cuota-chip ${i===0?'cuota-chip-next':'cuota-chip-rest'}">${fmtMes(cu.fecha)}: ${fmt(cu.monto)}</div>`).join('')}</div>` : '<p style="color:var(--text2);font-size:13px;">Sin cuotas registradas en el Cuotero</p>';
