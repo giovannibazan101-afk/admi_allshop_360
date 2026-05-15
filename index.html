@@ -37,8 +37,14 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;back
 .bg-glow-2{width:600px;height:600px;background:#a78bfa;bottom:-200px;right:-200px;}
 
 /* ── LOGIN ── */
-#login-screen{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto;}
-.login-wrap{width:100%;max-width:420px;animation:slideUp .7s cubic-bezier(.16,1,.3,1) both;margin:auto;}
+#login-screen{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  z-index:10;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+  overflow-y:auto;
+}
+.login-wrap{width:100%;max-width:420px;animation:slideUp .7s cubic-bezier(.16,1,.3,1) both;}
 @keyframes slideUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
 .login-card{background:rgba(13,17,25,0.95);backdrop-filter:blur(32px);border:1px solid rgba(255,255,255,0.1);border-radius:28px;padding:40px 36px;box-shadow:0 0 0 1px rgba(91,156,246,0.06),0 50px 100px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.08);position:relative;overflow:hidden;}
 .login-card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,0.9),rgba(91,156,246,0.5),transparent);}
@@ -240,73 +246,68 @@ canvas{display:block;}
   .page-content{padding:14px;}
   .mobile-menu-btn{display:flex!important;}
 
-  /* Login mobile */
-  #login-screen{padding:12px;align-items:flex-start;padding-top:max(20px, env(safe-area-inset-top, 20px));}
+  /* Login: reducir padding para que entre sin scroll */
   .login-card{padding:28px 22px;border-radius:22px;}
   .login-title{font-size:24px;}
-  .admin-badge{margin-bottom:20px;}
-  .login-subtitle{margin-bottom:24px;}
+  .admin-badge{margin-bottom:16px;}
+  .login-subtitle{margin-bottom:22px;font-size:12px;}
+  .field{margin-bottom:14px;}
 
-  /* Stats cards: 1 column on very small screens */
-  .overview-stats{grid-template-columns:1fr 1fr;gap:10px;}
-  .stat-card{padding:16px 14px;border-radius:16px;}
-  .stat-value{font-size:18px;word-break:break-all;}
-  .stat-label{font-size:10px;}
-  .stat-sub{font-size:11px;}
+  /* Stats: números que no se corten */
+  .stat-card{padding:16px 12px;}
+  .stat-value{font-size:16px;word-break:break-all;line-height:1.2;}
+  .stat-label{font-size:9px;}
+  .stat-sub{font-size:10px;}
 
-  /* Deudor rows - hide bar, keep number visible */
+  /* Deudores: ocultar barra angosta, mostrar monto */
   .deudor-bar-wrap{display:none;}
-  .deudor-name{font-size:12.5px;}
-  .deudor-monto{font-size:12px;min-width:auto;}
-  .deudor-row{gap:8px;}
+  .deudor-name{font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .deudor-monto{font-size:11px;min-width:unset;white-space:nowrap;}
 
-  /* Movimientos table - scrollable */
+  /* Tabla movimientos scrolleable */
   .movs-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  .movs-table{min-width:560px;}
-  .movs-table th,.movs-table td{padding:10px 12px;font-size:12px;}
+  .movs-table{min-width:520px;}
+  .movs-table th,.movs-table td{padding:10px 10px;font-size:11px;}
 
-  /* Modal on mobile */
+  /* Modal: sube desde abajo como sheet */
   #client-modal{padding:0;align-items:flex-end;}
-  .modal-card{max-width:100%;border-radius:24px 24px 0 0;max-height:88vh;}
+  .modal-card{border-radius:22px 22px 0 0;max-width:100%;max-height:88vh;}
   .modal-stats{grid-template-columns:1fr 1fr;}
-  .modal-stat-value{font-size:16px;}
-  .modal-header{padding:18px 20px 14px;}
-  .modal-body{padding:16px 20px 24px;}
-  .modal-movs-table{min-width:480px;}
-  .modal-movs-table th,.modal-movs-table td{padding:8px 10px;font-size:12px;}
-  .modal-section-title{font-size:14px;}
+  .modal-stat-value{font-size:15px;}
+  .modal-header{padding:16px 18px 12px;}
+  .modal-body{padding:14px 18px 28px;}
+  .modal-title{font-size:16px;}
 
-  /* Top bar adjustments */
-  .top-bar-title{font-size:16px;}
-  .top-status span{display:none;}
+  /* Tabla del modal scrolleable */
+  .modal-movs-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .modal-movs-table{min-width:440px;}
+  .modal-movs-table th,.modal-movs-table td{padding:8px 10px;font-size:11px;}
+
+  /* Top bar compacto */
+  .top-bar-title{font-size:15px;}
+  .top-status{display:none;}
   .top-refresh-btn{padding:0 10px;font-size:11px;}
 
-  /* Toolbar filters stack vertically */
+  /* Toolbars apiladas */
   .clients-toolbar,.movs-toolbar{flex-direction:column;gap:8px;}
   .search-wrap{width:100%;}
   .filter-select{width:100%;height:40px;}
 
-  /* Deudas stats: 1 column */
+  /* Stats de deudas/ganancias */
   #deudas-stats{grid-template-columns:1fr 1fr!important;}
   #ganancias-stats{grid-template-columns:1fr 1fr!important;}
 
-  /* Chart cards */
-  .chart-card{padding:16px;}
-  .chart-title{font-size:13px;margin-bottom:12px;}
-
-  /* Client cards */
-  .client-card{padding:16px;}
-  .client-stat-value{font-size:13px;}
-  .client-name{font-size:13px;}
+  /* Charts */
+  .chart-card{padding:14px 14px;}
+  .chart-title{font-size:12px;margin-bottom:10px;}
 }
 
 @media(max-width:400px){
+  .login-card{padding:22px 16px;}
   .overview-stats{grid-template-columns:1fr;}
   #deudas-stats{grid-template-columns:1fr!important;}
   #ganancias-stats{grid-template-columns:1fr!important;}
-  .stat-value{font-size:20px;}
 }
-
 .mobile-menu-btn{display:none;width:36px;height:36px;align-items:center;justify-content:center;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);cursor:pointer;font-size:18px;color:var(--text2);}
 .sidebar-overlay{display:none;position:fixed;inset:0;z-index:29;background:rgba(0,0,0,0.5);}
 .sidebar-overlay.show{display:block;}
@@ -563,33 +564,14 @@ canvas{display:block;}
 const SHEET_BASE_URL    = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSv4sJRpZ7wf2dHKkkGpYkhAt1F0ysyRzvHwkNdw05r1APa7nO8ZFDSRmJ7SoQ64wSk8idaVYt0iu5-/pub?output=csv";
 const SHEET_CUOTERO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSv4sJRpZ7wf2dHKkkGpYkhAt1F0ysyRzvHwkNdw05r1APa7nO8ZFDSRmJ7SoQ64wSk8idaVYt0iu5-/pub?gid=900301684&single=true&output=csv";
 
-// Admin credentials (SHA-256 hash de "bazan123*")
+// Admin credentials
 const ADMIN_USERS = {
-  "giovannibazan": "18b9b3c8f8b1e2a5d3c7e9f0a6d2b4e8c1f5d7a9e3b0c2f4e6a8d0b2c4e6f8a0"
+  "giovannibazan": "bazan123*"
 };
 
-// Clientes del sistema
-const ALL_CLIENTS = [
-  { username:"fabiolaferreira",    key:"Fabiola Ferreira" },
-  { username:"luzsanabria",        key:"LUZ SANABRIA" },
-  { username:"fernandoferreira",   key:"FERNANDO FERREIRA" },
-  { username:"franciscocardozo",   key:"Francisco Cardozo" },
-  { username:"luzsalinas",         key:"LUZ SALINAS" },
-  { username:"josebritez",         key:"JOSE BRITEZ" },
-  { username:"juanflores",         key:"JUAN FLORES" },
-  { username:"elias",              key:"ELIAS" },
-  { username:"ronaldobenitezlumi", key:"RONALDO BENITEZ (LUMI)" },
-  { username:"hermanodeluz",       key:"HERMANO DE LUZ" },
-  { username:"isaias",             key:"ISAIAS" },
-  { username:"tobiasinsaurralde",  key:"TOBIAS INSAURRALDE" },
-  { username:"compañeradepaz",     key:"compañera de paz" },
-  { username:"flor",               key:"FLOR" },
-  { username:"pazgomez",           key:"Paz Gómez" },
-  { username:"veronicagil",        key:"Veronica Gil" },
-  { username:"mamadeisaias",       key:"MAMA DE ISAIAS" },
-  { username:"navidalia",          key:"ÑA VIDALIA" },
-  { username:"edgarolmedo",        key:"EDGAR OLMEDO" }
-];
+// Clientes del sistema — se detectan automáticamente del Sheet
+// Esta lista se rellena en loadAllData() desde los datos reales
+let ALL_CLIENTS = [];
 
 // AVATAR COLORS
 const AVATAR_COLORS = [
@@ -607,6 +589,12 @@ function getInitials(name) {
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
   return name.substring(0,2).toUpperCase();
+}
+// Convierte "LUZ SANABRIA" → "luzsanabria"
+function nameToUsername(name) {
+  return name.trim().toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,'') // quita tildes
+    .replace(/[^a-z0-9]/g,''); // quita espacios y especiales
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -802,7 +790,23 @@ async function loadAllData(bust=false) {
     // Parse cuotero
     cuoteroRows = cuoteroRaw || [];
 
-    // Enrich clients
+    // ── Construir ALL_CLIENTS automáticamente desde los nombres del Sheet ──
+    // Detecta cada nombre único que aparece en la columna NOMBRE
+    const seenNames = new Map(); // normalizado → nombre original (primer aparición)
+    for(const m of allMovs){
+      const norm = m.nombre.toUpperCase();
+      if(!seenNames.has(norm)) seenNames.set(norm, m.nombre);
+    }
+    // También incluir nombres del Cuotero que no estén en movimientos
+    if(cuoteroRows.length>1){
+      for(let r=1;r<cuoteroRows.length;r++){
+        const n=(cuoteroRows[r][0]||'').trim();
+        if(n && !seenNames.has(n.toUpperCase())) seenNames.set(n.toUpperCase(), n);
+      }
+    }
+    ALL_CLIENTS = Array.from(seenNames.values())
+      .sort((a,b)=>a.localeCompare(b,'es'))
+      .map(key => ({ username: nameToUsername(key), key }));
     allClients = ALL_CLIENTS.map(c => {
       const movs = allMovs.filter(m => m.nombre.toUpperCase() === c.key.toUpperCase());
       const ventas = movs.filter(m=>m.tipo==='VENTA');
@@ -1026,7 +1030,7 @@ function openClient(username) {
 
   const sortedMovs = [...c.movs].sort((a,b)=>b.fecha.localeCompare(a.fecha));
   const movsHTML = sortedMovs.length ? `
-    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+    <div class="modal-movs-table-wrap">
     <table class="modal-movs-table">
       <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Descripción</th><th style="text-align:right">Monto</th></tr></thead>
       <tbody>${sortedMovs.map(m=>{
@@ -1398,3 +1402,4 @@ document.addEventListener("keydown", e => { if(e.key==="Escape") closeModal(); }
 </script>
 </body>
 </html>
+
