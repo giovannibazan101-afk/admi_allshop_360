@@ -311,6 +311,43 @@ canvas{display:block;}
 .mobile-menu-btn{display:none;width:36px;height:36px;align-items:center;justify-content:center;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);cursor:pointer;font-size:18px;color:var(--text2);}
 .sidebar-overlay{display:none;position:fixed;inset:0;z-index:29;background:rgba(0,0,0,0.5);}
 .sidebar-overlay.show{display:block;}
+
+/* ── PROYECCIONES PAGE ── */
+.proy-timeline{display:flex;flex-direction:column;gap:12px;margin-bottom:28px;}
+.proy-mes-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:border-color .2s;}
+.proy-mes-card:hover{border-color:rgba(91,156,246,0.25);}
+.proy-mes-header{display:flex;align-items:center;gap:16px;padding:16px 20px;cursor:pointer;user-select:none;}
+.proy-mes-month{font-family:'Fraunces',serif;font-size:15px;font-weight:700;letter-spacing:-.2px;flex:1;}
+.proy-mes-meta{display:flex;align-items:center;gap:18px;}
+.proy-mes-clientes{font-size:12px;color:var(--text2);}
+.proy-mes-monto{font-size:15px;font-weight:700;color:var(--blue);}
+.proy-mes-arrow{font-size:12px;color:var(--text2);transition:transform .25s;}
+.proy-mes-card.open .proy-mes-arrow{transform:rotate(90deg);}
+.proy-mes-badge{padding:3px 10px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
+.proy-mes-badge-current{background:rgba(52,211,153,0.15);color:var(--green);border:1px solid rgba(52,211,153,0.3);}
+.proy-mes-badge-next{background:rgba(245,158,11,0.15);color:var(--gold);border:1px solid rgba(245,158,11,0.3);}
+.proy-mes-badge-future{background:rgba(91,156,246,0.1);color:var(--blue);border:1px solid rgba(91,156,246,0.2);}
+.proy-mes-bar-bg{height:3px;background:rgba(255,255,255,0.05);}
+.proy-mes-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#3b82f6,#5b9cf6);transition:width .6s ease;}
+.proy-mes-detail{display:none;padding:0 20px 16px;}
+.proy-mes-card.open .proy-mes-detail{display:block;}
+.proy-clientes-list{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+.proy-cliente-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.05);}
+.proy-cliente-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+.proy-cliente-name{flex:1;font-size:13px;font-weight:500;}
+.proy-cliente-cuota{font-size:11px;color:var(--text2);margin-top:1px;}
+.proy-cliente-monto{font-size:14px;font-weight:700;color:var(--blue);}
+.proy-resumen-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.proy-chart-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:28px;}
+@media(max-width:800px){
+  .proy-resumen-grid{grid-template-columns:1fr 1fr;}
+  .proy-chart-row{grid-template-columns:1fr;}
+  .proy-mes-meta{gap:10px;}
+  .proy-mes-monto{font-size:13px;}
+}
+@media(max-width:400px){
+  .proy-resumen-grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
@@ -376,6 +413,9 @@ canvas{display:block;}
       </div>
       <div class="nav-item" onclick="showPage('ganancias')" id="nav-ganancias">
         <span class="nav-item-icon">📈</span> Ganancias
+      </div>
+      <div class="nav-item" onclick="showPage('proyecciones')" id="nav-proyecciones">
+        <span class="nav-item-icon">🗓️</span> Proyecciones de Pago
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -539,6 +579,34 @@ canvas{display:block;}
           </div>
         </div>
       </div>
+
+      <!-- PROYECCIONES DE PAGO -->
+      <div class="page" id="page-proyecciones">
+        <div class="proy-resumen-grid" id="proy-stats">
+          <div class="loading-state" style="grid-column:1/-1;">
+            <div class="loading-spinner-wrap"><div class="loading-spinner"></div></div>
+            <div class="loading-label">Calculando proyecciones…</div>
+          </div>
+        </div>
+        <div id="proy-charts-row" class="proy-chart-row" style="display:none;">
+          <div class="chart-card">
+            <div class="chart-title">📊 Ingresos Proyectados por Mes</div>
+            <div class="chart-wrap"><canvas id="chart-proy-barras" height="200"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">👥 Clientes por Mes</div>
+            <div class="chart-wrap"><canvas id="chart-proy-donut" height="200"></canvas></div>
+          </div>
+        </div>
+        <div id="proy-timeline-section" style="display:none;">
+          <div class="section-hdr" style="margin-bottom:16px;">
+            <div class="section-hdr-title">📅 Detalle por Mes</div>
+            <span class="section-badge badge-blue" id="proy-badge">—</span>
+          </div>
+          <div class="proy-timeline" id="proy-timeline"></div>
+        </div>
+      </div>
+
     </div><!-- end page-content -->
   </div><!-- end main-area -->
 </div><!-- end admin-panel -->
@@ -636,7 +704,7 @@ async function doAdminLogin() {
   
   // Check against known hash — or accept any admin in ADMIN_USERS
   // Since we can't precompute the hash here at dev time, we check username + use a fallback
-  const validUsers = { "giovannibazan": pass === "bazan123*" };
+  const validUsers = { "giovannibazan": pass === "bazan123*", "jazminvera": pass === "vera123*" };
   const ok = validUsers[user] === true;
 
   if (ok) {
@@ -851,6 +919,7 @@ async function loadAllData(bust=false) {
     renderMovimientos();
     renderDeudas();
     renderGanancias();
+    renderProyecciones();
 
   } catch(e) {
     console.error(e);
@@ -862,7 +931,7 @@ function refreshData() {
   // Clear cache and reload
   Object.keys(_cache).forEach(k=>delete _cache[k]);
   dataLoaded=false;
-  renderOverview(); renderClients(); renderMovimientos(); renderDeudas(); renderGanancias();
+  renderOverview(); renderClients(); renderMovimientos(); renderDeudas(); renderGanancias(); renderProyecciones();
   loadAllData(true);
 }
 
@@ -1373,12 +1442,186 @@ function renderGanancias() {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// RENDER PROYECCIONES DE PAGO
+// ══════════════════════════════════════════════════════════════════
+function renderProyecciones() {
+  if(!dataLoaded) return;
+
+  // Agrupar cuotas del Cuotero por mes → { 'YYYY-MM': [{cliente, monto, cuotaIdx}] }
+  const byMes = {};
+  allClients.forEach(c => {
+    c.cuotas.forEach((cu, idx) => {
+      const key = cu.fecha; // 'YYYY-MM'
+      if(!byMes[key]) byMes[key] = [];
+      byMes[key].push({ cliente: c, monto: cu.monto, cuotaIdx: idx });
+    });
+  });
+
+  const meses = Object.keys(byMes).sort();
+  const today = new Date();
+  const mesActual = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+
+  // Total proyectado de todos los meses futuros (incluyendo actual)
+  const totalProy = meses.reduce((s,m)=> m >= mesActual ? s + byMes[m].reduce((ss,r)=>ss+r.monto,0) : s, 0);
+  const mesesFuturos = meses.filter(m => m >= mesActual);
+  const proximoMes = mesesFuturos[0] || null;
+  const montoProximo = proximoMes ? byMes[proximoMes].reduce((s,r)=>s+r.monto,0) : 0;
+  const totalClientes = new Set(meses.flatMap(m=>byMes[m].map(r=>r.cliente.key))).size;
+  const maxMonto = meses.length ? Math.max(...meses.map(m=>byMes[m].reduce((s,r)=>s+r.monto,0))) : 1;
+
+  // Stats cards
+  document.getElementById("proy-stats").innerHTML = `
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#3b82f6,#5b9cf6);--glow:rgba(59,130,246,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">📅</div>
+      <div class="stat-label">Meses con pagos</div>
+      <div class="stat-value">${meses.length}</div>
+      <div class="stat-sub">en el Cuotero</div>
+    </div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#059669,#34d399);--glow:rgba(52,211,153,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">💵</div>
+      <div class="stat-label">Total a cobrar</div>
+      <div class="stat-value">${totalProy.toLocaleString('es-PY')}</div>
+      <div class="stat-sub">Gs. proyectados</div>
+    </div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#d97706,#fbbf24);--glow:rgba(245,158,11,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">🔜</div>
+      <div class="stat-label">${proximoMes ? fmtMes(proximoMes) : '—'}</div>
+      <div class="stat-value">${montoProximo.toLocaleString('es-PY')}</div>
+      <div class="stat-sub">Gs. próximo mes</div>
+    </div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#7c3aed,#a78bfa);--glow:rgba(124,58,237,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">👥</div>
+      <div class="stat-label">Clientes con cuotas</div>
+      <div class="stat-value">${totalClientes}</div>
+      <div class="stat-sub">tienen plan de pago</div>
+    </div>
+  `;
+
+  if(!meses.length) {
+    document.getElementById("proy-timeline-section").style.display = "";
+    document.getElementById("proy-badge").textContent = "Sin datos";
+    document.getElementById("proy-timeline").innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No hay cuotas en el Cuotero todavía</p></div>';
+    return;
+  }
+
+  // Charts
+  document.getElementById("proy-charts-row").style.display = "";
+
+  const barColors = meses.map(m => {
+    if(m === mesActual) return 'rgba(52,211,153,0.75)';
+    if(m > mesActual) return 'rgba(91,156,246,0.7)';
+    return 'rgba(138,154,184,0.35)';
+  });
+
+  if(charts.proyBarras) charts.proyBarras.destroy();
+  charts.proyBarras = new Chart(document.getElementById("chart-proy-barras"), {
+    type: 'bar',
+    data: {
+      labels: meses.map(m => fmtMes(m)),
+      datasets: [{
+        label: 'Proyectado Gs.',
+        data: meses.map(m => byMes[m].reduce((s,r)=>s+r.monto,0)),
+        backgroundColor: barColors,
+        borderRadius: 7,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.parsed.y.toLocaleString('es-PY') + ' Gs.' } }
+      },
+      scales: {
+        x: { ticks: { color: '#8a9ab8' }, grid: { display: false } },
+        y: { ticks: { color: '#8a9ab8', callback: v => v.toLocaleString('es-PY') }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+
+  // Donut: clientes únicos por mes
+  const clientesPerMes = meses.map(m => new Set(byMes[m].map(r=>r.cliente.key)).size);
+  const donutColors = meses.map((_,i) => `hsla(${210+i*28},70%,62%,0.8)`);
+  if(charts.proyDonut) charts.proyDonut.destroy();
+  charts.proyDonut = new Chart(document.getElementById("chart-proy-donut"), {
+    type: 'doughnut',
+    data: {
+      labels: meses.map(m => fmtMes(m)),
+      datasets: [{ data: clientesPerMes, backgroundColor: donutColors, borderWidth: 2, borderColor: '#0d1119' }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#8a9ab8', font: { family: 'DM Sans', size: 11 } } },
+        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed} clientes` } }
+      }
+    }
+  });
+
+  // Timeline
+  document.getElementById("proy-timeline-section").style.display = "";
+  document.getElementById("proy-badge").textContent = `${meses.length} mes${meses.length!==1?'es':''}`;
+
+  document.getElementById("proy-timeline").innerHTML = meses.map(mes => {
+    const items = byMes[mes];
+    const total = items.reduce((s,r)=>s+r.monto,0);
+    const pct = Math.round((total/maxMonto)*100);
+    const clientesUniq = new Set(items.map(r=>r.cliente.key)).size;
+
+    let badgeHTML = '';
+    if(mes === mesActual) badgeHTML = '<span class="proy-mes-badge proy-mes-badge-current">Mes actual</span>';
+    else if(mes === mesesFuturos[1]) badgeHTML = '<span class="proy-mes-badge proy-mes-badge-next">Próximo</span>';
+    else if(mes > mesActual) badgeHTML = '<span class="proy-mes-badge proy-mes-badge-future">Futuro</span>';
+
+    const clienteRows = items.sort((a,b)=>b.monto-a.monto).map(r => {
+      const [av1,av2] = getAvatarColor(r.cliente.key);
+      const cuotaLabel = r.cliente.cuotas.length > 1 ? `Cuota ${r.cuotaIdx+1} de ${r.cliente.cuotas.length}` : 'Pago único';
+      return `
+        <div class="proy-cliente-row">
+          <div class="proy-cliente-avatar" style="background:linear-gradient(135deg,${av1},${av2})">${getInitials(r.cliente.key)}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="proy-cliente-name">${r.cliente.key}</div>
+            <div class="proy-cliente-cuota">${cuotaLabel}</div>
+          </div>
+          <div class="proy-cliente-monto">${r.monto.toLocaleString('es-PY')} Gs.</div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="proy-mes-card" id="proy-card-${mes}">
+        <div class="proy-mes-header" onclick="toggleProyMes('${mes}')">
+          <div class="proy-mes-month">${fmtMes(mes)}</div>
+          ${badgeHTML}
+          <div class="proy-mes-meta">
+            <span class="proy-mes-clientes">👥 ${clientesUniq} cliente${clientesUniq!==1?'s':''}</span>
+            <span class="proy-mes-monto">${total.toLocaleString('es-PY')} Gs.</span>
+          </div>
+          <span class="proy-mes-arrow">▶</span>
+        </div>
+        <div class="proy-mes-bar-bg"><div class="proy-mes-bar-fill" style="width:${pct}%"></div></div>
+        <div class="proy-mes-detail">
+          <div class="proy-clientes-list">${clienteRows}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Auto-open el mes actual o el próximo
+  const autoOpen = mesActual in byMes ? mesActual : (mesesFuturos[0] || null);
+  if(autoOpen) toggleProyMes(autoOpen);
+}
+
+function toggleProyMes(mes) {
+  const card = document.getElementById("proy-card-" + mes);
+  if(card) card.classList.toggle("open");
+}
+
+// ══════════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════════
 const pageNames = {
   overview:'Resumen General', clients:'Clientes',
   movimientos:'Movimientos', deudas:'Deudas & Cuotas',
-  ganancias:'Ganancias'
+  ganancias:'Ganancias', proyecciones:'Proyecciones de Pago'
 };
 function showPage(page) {
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
@@ -1402,4 +1645,6 @@ document.addEventListener("keydown", e => { if(e.key==="Escape") closeModal(); }
 </script>
 </body>
 </html>
+
+
 
