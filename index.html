@@ -897,7 +897,7 @@ async function loadAllData(bust=false) {
           const row=cuoteroRows[r];
           const nombre=(row[0]||'').trim();
           if(nombre.toUpperCase()!==c.key.toUpperCase()) continue;
-          for(let col=3;col<cheaders.length;col++){
+          for(let col=4;col<cheaders.length;col++){
             const montoMes=parseMontoPY(row[col]);
             if(montoMes>0) cuotas.push({fecha:normalizarMes(cheaders[col]),monto:montoMes});
           }
@@ -1645,6 +1645,4 @@ document.addEventListener("keydown", e => { if(e.key==="Escape") closeModal(); }
 </script>
 </body>
 </html>
-
-
 
