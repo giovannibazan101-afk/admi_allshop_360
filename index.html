@@ -348,6 +348,60 @@ canvas{display:block;}
 @media(max-width:400px){
   .proy-resumen-grid{grid-template-columns:1fr;}
 }
+
+/* ── PROFORMA / GASTOS PAGE ── */
+.proforma-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.proforma-mes-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.proforma-mes-tabs::-webkit-scrollbar{display:none;}
+.proforma-tab{padding:7px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.proforma-tab.active{background:rgba(248,113,113,0.12);border-color:rgba(248,113,113,0.35);color:var(--red);}
+.proforma-tab:hover:not(.active){background:rgba(255,255,255,0.07);color:var(--text);}
+.proforma-resumen{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+.proforma-deficit-card{grid-column:1/-1;background:rgba(248,113,113,0.05);border:1px solid rgba(248,113,113,0.25);border-radius:20px;padding:22px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;position:relative;overflow:hidden;}
+.proforma-deficit-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#f87171,#fbbf24);opacity:.8;}
+.proforma-deficit-label{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+.proforma-deficit-value{font-family:'Fraunces',serif;font-size:32px;font-weight:900;letter-spacing:-1px;}
+.proforma-deficit-value.superavit{color:var(--green);}
+.proforma-deficit-value.deficit{color:var(--red);}
+.proforma-deficit-meta{display:flex;gap:24px;flex-wrap:wrap;}
+.proforma-deficit-item{text-align:center;}
+.proforma-deficit-item-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+.proforma-deficit-item-val{font-size:16px;font-weight:700;}
+.proforma-deficit-item-val.ingreso{color:var(--blue);}
+.proforma-deficit-item-val.egreso{color:var(--red);}
+.proforma-categorias{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-bottom:24px;}
+.proforma-cat-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.proforma-cat-title{font-family:'Fraunces',serif;font-size:15px;font-weight:700;}
+.proforma-cat-total{font-size:14px;font-weight:700;color:var(--red);}
+.proforma-item-row{display:grid;grid-template-columns:1fr auto;align-items:center;padding:13px 22px;border-bottom:1px solid rgba(255,255,255,0.04);transition:background .15s;}
+.proforma-item-row:last-child{border-bottom:none;}
+.proforma-item-row:hover{background:rgba(255,255,255,0.025);}
+.proforma-item-concepto{font-size:13.5px;font-weight:500;display:flex;align-items:center;gap:10px;}
+.proforma-item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.proforma-item-monto{font-size:14px;font-weight:700;color:var(--red);text-align:right;}
+.proforma-chart-section{margin-bottom:24px;}
+.proforma-anual-table{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-bottom:24px;}
+.proforma-anual-scroll{overflow-x:auto;}
+.proforma-anual-tbl{width:100%;border-collapse:collapse;min-width:600px;}
+.proforma-anual-tbl th{padding:12px 16px;text-align:right;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border);white-space:nowrap;}
+.proforma-anual-tbl th:first-child{text-align:left;}
+.proforma-anual-tbl td{padding:11px 16px;font-size:12.5px;border-bottom:1px solid rgba(255,255,255,0.04);text-align:right;white-space:nowrap;}
+.proforma-anual-tbl td:first-child{text-align:left;font-weight:600;font-size:13px;}
+.proforma-anual-tbl tr:last-child td{border-bottom:none;}
+.proforma-anual-tbl tr:hover td{background:rgba(255,255,255,0.02);}
+.proforma-anual-tbl .row-total td{background:rgba(255,255,255,0.03);font-weight:700;}
+.proforma-anual-tbl .row-ingreso td{color:var(--blue);}
+.proforma-anual-tbl .row-deficit td{color:var(--red);}
+.proforma-anual-tbl .row-deficit td.superavit{color:var(--green);}
+.cell-high{color:var(--red)!important;}
+.cell-zero{color:var(--text2)!important;font-weight:400!important;}
+@media(max-width:800px){
+  .proforma-resumen{grid-template-columns:1fr 1fr;}
+  .proforma-deficit-card{flex-direction:column;align-items:flex-start;}
+}
+@media(max-width:400px){
+  .proforma-resumen{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
@@ -416,6 +470,10 @@ canvas{display:block;}
       </div>
       <div class="nav-item" onclick="showPage('proyecciones')" id="nav-proyecciones">
         <span class="nav-item-icon">🗓️</span> Proyecciones de Pago
+      </div>
+      <div class="nav-section-label">Finanzas Personales</div>
+      <div class="nav-item" onclick="showPage('proforma')" id="nav-proforma">
+        <span class="nav-item-icon">💳</span> Gastos &amp; Déficit
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -607,6 +665,48 @@ canvas{display:block;}
         </div>
       </div>
 
+      <!-- GASTOS & DÉFICIT (PROFORMA) -->
+      <div class="page" id="page-proforma">
+        <!-- Resumen tarjetas -->
+        <div class="proforma-resumen" id="proforma-resumen">
+          <div class="loading-state" style="grid-column:1/-1;">
+            <div class="loading-spinner-wrap"><div class="loading-spinner"></div></div>
+            <div class="loading-label">Cargando proforma de gastos…</div>
+          </div>
+        </div>
+        <!-- Tabs de meses -->
+        <div class="proforma-header-row" id="proforma-header-row" style="display:none;">
+          <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:700;">📅 Detalle por Mes</div>
+          <div class="proforma-mes-tabs" id="proforma-tabs"></div>
+        </div>
+        <!-- Categorías del mes seleccionado -->
+        <div id="proforma-detalle" style="display:none;">
+          <div class="proforma-categorias" id="proforma-cat-list"></div>
+          <div class="proforma-chart-section">
+            <div class="charts-row" style="grid-template-columns:2fr 1fr;">
+              <div class="chart-card">
+                <div class="chart-title">📊 Gastos vs Ingresos por Mes</div>
+                <div class="chart-wrap"><canvas id="chart-proforma-tendencia" height="200"></canvas></div>
+              </div>
+              <div class="chart-card">
+                <div class="chart-title">🥧 Distribución de Gastos</div>
+                <div class="chart-wrap"><canvas id="chart-proforma-donut" height="200"></canvas></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Tabla anual resumen -->
+        <div class="proforma-anual-table" id="proforma-anual-table" style="display:none;">
+          <div class="proforma-cat-header">
+            <div class="proforma-cat-title">📋 Resumen Anual — Todos los Meses</div>
+            <span class="section-badge badge-red" id="proforma-anual-badge">—</span>
+          </div>
+          <div class="proforma-anual-scroll">
+            <table class="proforma-anual-tbl" id="proforma-anual-tbl"></table>
+          </div>
+        </div>
+      </div>
+
     </div><!-- end page-content -->
   </div><!-- end main-area -->
 </div><!-- end admin-panel -->
@@ -630,7 +730,8 @@ canvas{display:block;}
 // CONFIG
 // ══════════════════════════════════════════════════════════════════
 const SHEET_BASE_URL    = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSv4sJRpZ7wf2dHKkkGpYkhAt1F0ysyRzvHwkNdw05r1APa7nO8ZFDSRmJ7SoQ64wSk8idaVYt0iu5-/pub?output=csv";
-const SHEET_CUOTERO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSv4sJRpZ7wf2dHKkkGpYkhAt1F0ysyRzvHwkNdw05r1APa7nO8ZFDSRmJ7SoQ64wSk8idaVYt0iu5-/pub?gid=900301684&single=true&output=csv";
+const SHEET_CUOTERO_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSv4sJRpZ7wf2dHKkkGpYkhAt1F0ysyRzvHwkNdw05r1APa7nO8ZFDSRmJ7SoQ64wSk8idaVYt0iu5-/pub?gid=900301684&single=true&output=csv";
+const SHEET_PROFORMA_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSv4sJRpZ7wf2dHKkkGpYkhAt1F0ysyRzvHwkNdw05r1APa7nO8ZFDSRmJ7SoQ64wSk8idaVYt0iu5-/pub?gid=1528063064&single=true&output=csv";
 
 // Admin credentials
 const ADMIN_USERS = {
@@ -671,6 +772,7 @@ function nameToUsername(name) {
 let allMovs = [];
 let allClients = []; // enriched client objects
 let cuoteroRows = [];
+let proformaRows = [];
 let dataLoaded = false;
 let charts = {};
 
@@ -749,7 +851,7 @@ function doLogout() {
   document.getElementById("inp-pass").value = "";
   document.getElementById("error-box").classList.remove("show");
   dataLoaded = false;
-  allMovs = []; allClients = []; cuoteroRows = [];
+  allMovs = []; allClients = []; cuoteroRows = []; proformaRows = []; _proformaActiveMes = null;
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -821,9 +923,10 @@ function fmtMes(str){const[y,m]=str.split('-');const meses=['','Enero','Febrero'
 // ══════════════════════════════════════════════════════════════════
 async function loadAllData(bust=false) {
   try {
-    const [baseRows, cuoteroRaw] = await Promise.all([
+    const [baseRows, cuoteroRaw, proformaRaw] = await Promise.all([
       fetchCSV(SHEET_BASE_URL, bust),
-      fetchCSV(SHEET_CUOTERO_URL, bust).catch(()=>null)
+      fetchCSV(SHEET_CUOTERO_URL, bust).catch(()=>null),
+      fetchCSV(SHEET_PROFORMA_URL, bust).catch(()=>null)
     ]);
 
     // Parse base
@@ -857,6 +960,8 @@ async function loadAllData(bust=false) {
 
     // Parse cuotero
     cuoteroRows = cuoteroRaw || [];
+    // Parse proforma
+    proformaRows = proformaRaw || [];
 
     // ── Construir ALL_CLIENTS automáticamente desde los nombres del Sheet ──
     // Detecta cada nombre único que aparece en la columna NOMBRE
@@ -920,6 +1025,7 @@ async function loadAllData(bust=false) {
     renderDeudas();
     renderGanancias();
     renderProyecciones();
+    renderProforma();
 
   } catch(e) {
     console.error(e);
@@ -931,7 +1037,7 @@ function refreshData() {
   // Clear cache and reload
   Object.keys(_cache).forEach(k=>delete _cache[k]);
   dataLoaded=false;
-  renderOverview(); renderClients(); renderMovimientos(); renderDeudas(); renderGanancias(); renderProyecciones();
+  renderOverview(); renderClients(); renderMovimientos(); renderDeudas(); renderGanancias(); renderProyecciones(); renderProforma();
   loadAllData(true);
 }
 
@@ -1616,12 +1722,313 @@ function toggleProyMes(mes) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// RENDER PROFORMA / GASTOS & DÉFICIT
+// ══════════════════════════════════════════════════════════════════
+let _proformaActiveMes = null;
+
+function parseProformaData() {
+  if (!proformaRows || proformaRows.length < 2) return null;
+  // Row 0 = headers: col 0 = "Concepto" (o similar), col 1+ = meses (ej "Enero 2025")
+  const headers = proformaRows[0];
+  const mesesCols = []; // {label, mesKey, colIdx}
+  for (let c = 1; c < headers.length; c++) {
+    const h = (headers[c] || '').trim();
+    if (!h) continue;
+    const mk = normalizarMes(h);
+    mesesCols.push({ label: h, mesKey: mk, colIdx: c });
+  }
+
+  // Rows 1..n: each row is a "concepto" (gasto)
+  // Detect special rows: totals, ingresos row
+  const gastos = []; // {concepto, valores: {mesKey: monto}}
+  const ingresosByMes = {}; // mesKey → monto (row whose concepto includes "ingreso"/"cobrar")
+  const INGRESO_RE = /ingreso|cobrar|entrada|proyecci/i;
+  const SKIP_RE = /total|subtotal|balance|d[eé]ficit|super[aá]vit/i;
+
+  for (let r = 1; r < proformaRows.length; r++) {
+    const row = proformaRows[r];
+    const concepto = (row[0] || '').trim();
+    if (!concepto) continue;
+    if (SKIP_RE.test(concepto)) continue;
+    const valores = {};
+    for (const mc of mesesCols) {
+      valores[mc.mesKey] = parseMontoPY(row[mc.colIdx] || '0');
+    }
+    if (INGRESO_RE.test(concepto)) {
+      for (const mc of mesesCols) {
+        ingresosByMes[mc.mesKey] = (ingresosByMes[mc.mesKey] || 0) + (valores[mc.mesKey] || 0);
+      }
+    } else {
+      gastos.push({ concepto, valores });
+    }
+  }
+  return { mesesCols, gastos, ingresosByMes };
+}
+
+// Palette for gastos categories
+const PROFORMA_COLORS = [
+  '#f87171','#fb923c','#fbbf24','#a78bfa','#60a5fa','#34d399',
+  '#f472b6','#38bdf8','#facc15','#c084fc','#4ade80','#fb7185'
+];
+
+function renderProforma() {
+  if (!dataLoaded) return;
+  const data = parseProformaData();
+  const resumenEl = document.getElementById('proforma-resumen');
+  const headerRow = document.getElementById('proforma-header-row');
+  const detalleEl = document.getElementById('proforma-detalle');
+  const anualEl   = document.getElementById('proforma-anual-table');
+
+  if (!data || !data.mesesCols.length) {
+    resumenEl.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">📋</div><p>No se encontraron datos en la hoja Proforma.<br>Verificá que la hoja esté publicada como CSV y con el GID correcto.</p></div>`;
+    return;
+  }
+
+  const { mesesCols, gastos, ingresosByMes } = data;
+
+  // Totales por mes
+  const totalGastosByMes = {};
+  const deficitByMes = {};
+  for (const mc of mesesCols) {
+    totalGastosByMes[mc.mesKey] = gastos.reduce((s, g) => s + (g.valores[mc.mesKey] || 0), 0);
+    // Ingresos: si hay datos de cuotero proyectado, usar; si no, usar proforma propia
+    const ingresoProy = getIngresoProyectadoMes(mc.mesKey);
+    const ingresoProforma = ingresosByMes[mc.mesKey] || 0;
+    const ingreso = ingresoProy > 0 ? ingresoProy : ingresoProforma;
+    deficitByMes[mc.mesKey] = { ingreso, gasto: totalGastosByMes[mc.mesKey], saldo: ingreso - totalGastosByMes[mc.mesKey] };
+  }
+
+  // Pick default active mes: current month or first
+  const today = new Date();
+  const mesActual = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+  if (!_proformaActiveMes || !mesesCols.find(m => m.mesKey === _proformaActiveMes)) {
+    _proformaActiveMes = mesesCols.find(m => m.mesKey === mesActual)?.mesKey || mesesCols[0].mesKey;
+  }
+
+  // ── Resumen cards (current month) ──
+  const d = deficitByMes[_proformaActiveMes] || { ingreso: 0, gasto: 0, saldo: 0 };
+  const esDeficit = d.saldo < 0;
+  resumenEl.innerHTML = `
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#3b82f6,#60a5fa);--glow:rgba(59,130,246,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">💰</div>
+      <div class="stat-label">Ingresos Proyectados</div>
+      <div class="stat-value" style="color:var(--blue)">${d.ingreso.toLocaleString('es-PY')}</div>
+      <div class="stat-sub">Gs. esperados · ${fmtMes(_proformaActiveMes)}</div>
+    </div>
+    <div class="stat-card" style="--accent:linear-gradient(90deg,#f87171,#fb923c);--glow:rgba(248,113,113,0.15);">
+      <div class="stat-glow"></div><div class="stat-icon">💳</div>
+      <div class="stat-label">Total Gastos Fijos</div>
+      <div class="stat-value" style="color:var(--red)">${d.gasto.toLocaleString('es-PY')}</div>
+      <div class="stat-sub">Gs. comprometidos · ${gastos.length} conceptos</div>
+    </div>
+    <div class="proforma-deficit-card">
+      <div>
+        <div class="proforma-deficit-label">${esDeficit ? '⚠️ Déficit del Mes' : '✅ Superávit del Mes'}</div>
+        <div class="proforma-deficit-value ${esDeficit ? 'deficit' : 'superavit'}">${Math.abs(d.saldo).toLocaleString('es-PY')} Gs.</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:6px;">${fmtMes(_proformaActiveMes)} — ${esDeficit ? 'Los gastos superan los ingresos proyectados' : 'Los ingresos cubren todos los gastos'}</div>
+      </div>
+      <div class="proforma-deficit-meta">
+        ${mesesCols.slice(0,4).map(mc => {
+          const dd = deficitByMes[mc.mesKey];
+          const isD = dd.saldo < 0;
+          return `<div class="proforma-deficit-item">
+            <div class="proforma-deficit-item-label">${fmtMes(mc.mesKey).split(' ')[0]}</div>
+            <div class="proforma-deficit-item-val ${isD?'egreso':'ingreso'}">${isD?'–':'+'} ${Math.abs(dd.saldo).toLocaleString('es-PY')}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  // ── Tabs de meses ──
+  headerRow.style.display = '';
+  document.getElementById('proforma-tabs').innerHTML = mesesCols.map(mc =>
+    `<button class="proforma-tab ${mc.mesKey === _proformaActiveMes ? 'active' : ''}" onclick="selectProformaMes('${mc.mesKey}')">${fmtMes(mc.mesKey)}</button>`
+  ).join('');
+
+  // ── Detalle del mes activo ──
+  detalleEl.style.display = '';
+  renderProformaDetalle(data, deficitByMes);
+
+  // ── Tabla anual ──
+  anualEl.style.display = '';
+  renderProformaAnual(data, deficitByMes);
+}
+
+function getIngresoProyectadoMes(mesKey) {
+  // Suma de cuotas proyectadas de clientes para ese mes (del cuotero)
+  if (!dataLoaded) return 0;
+  return allClients.reduce((sum, c) => {
+    return sum + c.cuotas.filter(q => q.fecha === mesKey).reduce((s, q) => s + q.monto, 0);
+  }, 0);
+}
+
+function selectProformaMes(mesKey) {
+  _proformaActiveMes = mesKey;
+  renderProforma();
+}
+
+function renderProformaDetalle(data, deficitByMes) {
+  const { mesesCols, gastos } = data;
+  const mc = mesesCols.find(m => m.mesKey === _proformaActiveMes);
+  if (!mc) return;
+
+  const d = deficitByMes[_proformaActiveMes];
+  const gastosDelMes = gastos
+    .map(g => ({ concepto: g.concepto, monto: g.valores[mc.mesKey] || 0 }))
+    .filter(g => g.monto > 0)
+    .sort((a, b) => b.monto - a.monto);
+
+  const catListEl = document.getElementById('proforma-cat-list');
+  if (!gastosDelMes.length) {
+    catListEl.innerHTML = `<div class="proforma-cat-header"><div class="proforma-cat-title">Sin gastos registrados para ${fmtMes(mc.mesKey)}</div></div>`;
+  } else {
+    catListEl.innerHTML = `
+      <div class="proforma-cat-header">
+        <div class="proforma-cat-title">💳 Gastos de ${fmtMes(mc.mesKey)}</div>
+        <div class="proforma-cat-total">${d.gasto.toLocaleString('es-PY')} Gs.</div>
+      </div>
+      ${gastosDelMes.map((g, i) => `
+        <div class="proforma-item-row">
+          <div class="proforma-item-concepto">
+            <div class="proforma-item-dot" style="background:${PROFORMA_COLORS[i % PROFORMA_COLORS.length]}"></div>
+            ${g.concepto}
+          </div>
+          <div class="proforma-item-monto">${g.monto.toLocaleString('es-PY')} Gs.</div>
+        </div>`).join('')}`;
+  }
+
+  // Charts
+  // Tendencia barras
+  const allMesKeys = mesesCols.map(m => m.mesKey);
+  if (charts.proformaTendencia) charts.proformaTendencia.destroy();
+  charts.proformaTendencia = new Chart(document.getElementById('chart-proforma-tendencia'), {
+    type: 'bar',
+    data: {
+      labels: mesesCols.map(m => fmtMes(m.mesKey).split(' ')[0]),
+      datasets: [
+        {
+          label: 'Ingresos',
+          data: allMesKeys.map(mk => deficitByMes[mk]?.ingreso || 0),
+          backgroundColor: 'rgba(91,156,246,0.65)',
+          borderRadius: 6,
+          borderSkipped: false,
+          order: 2
+        },
+        {
+          label: 'Gastos',
+          data: allMesKeys.map(mk => deficitByMes[mk]?.gasto || 0),
+          backgroundColor: 'rgba(248,113,113,0.65)',
+          borderRadius: 6,
+          borderSkipped: false,
+          order: 2
+        },
+        {
+          label: 'Saldo',
+          data: allMesKeys.map(mk => deficitByMes[mk]?.saldo || 0),
+          type: 'line',
+          borderColor: 'rgba(52,211,153,0.9)',
+          backgroundColor: 'rgba(52,211,153,0.08)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: '#34d399',
+          order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#8a9ab8', font: { family: 'DM Sans', size: 11 } } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('es-PY')} Gs.` } }
+      },
+      scales: {
+        x: { ticks: { color: '#8a9ab8' }, grid: { display: false } },
+        y: { ticks: { color: '#8a9ab8', callback: v => (v/1000000).toFixed(1) + 'M' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+
+  // Donut distribución gastos del mes activo
+  const donutData = gastosDelMes.slice(0, 8);
+  if (charts.proformaDonut) charts.proformaDonut.destroy();
+  if (donutData.length) {
+    charts.proformaDonut = new Chart(document.getElementById('chart-proforma-donut'), {
+      type: 'doughnut',
+      data: {
+        labels: donutData.map(g => g.concepto),
+        datasets: [{ data: donutData.map(g => g.monto), backgroundColor: PROFORMA_COLORS.slice(0, donutData.length), borderWidth: 2, borderColor: '#0d1119' }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { labels: { color: '#8a9ab8', font: { family: 'DM Sans', size: 10 }, boxWidth: 12 } },
+          tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed.toLocaleString('es-PY')} Gs.` } }
+        }
+      }
+    });
+  }
+}
+
+function renderProformaAnual(data, deficitByMes) {
+  const { mesesCols, gastos } = data;
+  const tbl = document.getElementById('proforma-anual-tbl');
+  const badge = document.getElementById('proforma-anual-badge');
+
+  const totalAnualGasto = mesesCols.reduce((s, mc) => s + (deficitByMes[mc.mesKey]?.gasto || 0), 0);
+  const totalAnualIngreso = mesesCols.reduce((s, mc) => s + (deficitByMes[mc.mesKey]?.ingreso || 0), 0);
+  const totalAnualSaldo = totalAnualIngreso - totalAnualGasto;
+  badge.textContent = `${mesesCols.length} meses · Saldo: ${totalAnualSaldo >= 0 ? '+' : ''}${totalAnualSaldo.toLocaleString('es-PY')} Gs.`;
+  badge.className = `section-badge ${totalAnualSaldo >= 0 ? 'badge-green' : 'badge-red'}`;
+
+  // Build header
+  const thMeses = mesesCols.map(mc =>
+    `<th style="${mc.mesKey === _proformaActiveMes ? 'color:var(--blue);' : ''}">${fmtMes(mc.mesKey).split(' ')[0]}</th>`
+  ).join('');
+
+  // Build concept rows (only concepts that have at least one non-zero value)
+  const conceptRows = gastos.filter(g => mesesCols.some(mc => (g.valores[mc.mesKey] || 0) > 0)).map((g, gi) => {
+    const cells = mesesCols.map(mc => {
+      const v = g.valores[mc.mesKey] || 0;
+      const cls = v === 0 ? 'cell-zero' : '';
+      return `<td class="${cls}">${v > 0 ? v.toLocaleString('es-PY') : '—'}</td>`;
+    }).join('');
+    return `<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${PROFORMA_COLORS[gi % PROFORMA_COLORS.length]};margin-right:8px;"></span>${g.concepto}</td>${cells}</tr>`;
+  }).join('');
+
+  // Total gastos row
+  const totalGastoCells = mesesCols.map(mc => `<td class="cell-high">${(deficitByMes[mc.mesKey]?.gasto||0).toLocaleString('es-PY')}</td>`).join('');
+  // Ingresos row
+  const ingresoCells = mesesCols.map(mc => `<td style="color:var(--blue)">${(deficitByMes[mc.mesKey]?.ingreso||0).toLocaleString('es-PY')}</td>`).join('');
+  // Saldo row
+  const saldoCells = mesesCols.map(mc => {
+    const s = deficitByMes[mc.mesKey]?.saldo || 0;
+    return `<td class="${s >= 0 ? 'superavit' : ''}">${s >= 0 ? '+' : ''}${s.toLocaleString('es-PY')}</td>`;
+  }).join('');
+
+  tbl.innerHTML = `
+    <thead>
+      <tr>
+        <th style="text-align:left;min-width:160px;">Concepto</th>
+        ${thMeses}
+      </tr>
+    </thead>
+    <tbody>
+      ${conceptRows}
+      <tr class="row-total"><td>💳 Total Gastos</td>${totalGastoCells}</tr>
+      <tr class="row-ingreso"><td>💰 Ingresos Proy.</td>${ingresoCells}</tr>
+      <tr class="row-deficit"><td>${totalAnualSaldo >= 0 ? '✅ Superávit' : '⚠️ Déficit'}</td>${saldoCells}</tr>
+    </tbody>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════════════════
 const pageNames = {
   overview:'Resumen General', clients:'Clientes',
   movimientos:'Movimientos', deudas:'Deudas & Cuotas',
-  ganancias:'Ganancias', proyecciones:'Proyecciones de Pago'
+  ganancias:'Ganancias', proyecciones:'Proyecciones de Pago',
+  proforma:'Gastos & Déficit'
 };
 function showPage(page) {
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
@@ -1645,4 +2052,3 @@ document.addEventListener("keydown", e => { if(e.key==="Escape") closeModal(); }
 </script>
 </body>
 </html>
-
