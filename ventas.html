@@ -309,9 +309,9 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;back
         </div>
 
         <div class="vf-calc-row">
-          <div class="vf-calc-box" id="calc-margen">
-            <div class="vf-calc-label">Margen Gs.</div>
-            <div class="vf-calc-value vf-calc-blue" id="vf-disp-margen">—</div>
+          <div class="vf-calc-box" id="calc-descuento">
+            <div class="vf-calc-label">Descuento Gs.</div>
+            <div class="vf-calc-value vf-calc-blue" id="vf-disp-descuento">—</div>
           </div>
           <div class="vf-calc-box" id="calc-ganancia">
             <div class="vf-calc-label">Ganancia Gs.</div>
@@ -476,7 +476,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;back
 // ══════════════════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════════════════
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvGh69zMLmcxHCnmwEx_1SpeP1qOoBTLIKRZ_qnIo5Zq33gf0TOeeZDeDQex2zF4CS/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2P2l0xB14eftNGJ7p19Cdua7-m46ZOmleLouf2ILZHkl7_gOzHB2LH9Z2FCSIeCTY/exec';
 const SHEET_CUOTERO_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSv4sJRpZ7wf2dHKkkGpYkhAt1F0ysyRzvHwkNdw05r1APa7nO8ZFDSRmJ7SoQ64wSk8idaVYt0iu5-/pub?gid=900301684&single=true&output=csv';
 
 let cuoteroRows = [];
@@ -543,18 +543,15 @@ function parseCSV(text) {
 }
 function parseMontoPY(str) {
   if(!str) return 0;
-  let s=str.toString().trim();
-  if(!s||s==='-'||s==='0') return 0;
-  const isNeg=s.startsWith('-');
-  s=s.replace(/^-/,'');
-  const puntos=(s.match(/\./g)||[]).length,comas=(s.match(/,/g)||[]).length;
-  let num;
-  if(puntos>1){s=s.replace(/\./g,'');num=parseFloat(s);}
-  else if(puntos===1&&comas===0){const p=s.split('.');if(p[1]&&p[1].length===3){s=s.replace('.','');num=parseFloat(s);}else{num=parseFloat(s);}}
-  else if(comas===1&&puntos===0){num=parseFloat(s.replace(',','.'));}
-  else if(comas>=1){s=s.replace(/,/g,'');num=parseFloat(s);}
-  else{num=parseFloat(s.replace(/[^\d.]/g,''))||0;}
-  return isNeg?-(num||0):(num||0);
+  let s = str.toString().trim();
+  if(!s || s==='-' || s==='0') return 0;
+  const isNeg = s.startsWith('-');
+  s = s.replace(/^-/,'');
+  // Formato PY: puntos como miles, coma como decimal (ej: 3.286.400 o 410.800 o 403,750)
+  // Primero eliminar puntos de miles, luego coma decimal
+  s = s.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(s) || 0;
+  return isNeg ? -num : num;
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -613,20 +610,47 @@ function vfGetProducto() {
 // ══════════════════════════════════════════════════════════════════
 function pfSeleccionarCliente(name) {
   const nameUp = name.trim().toUpperCase();
-  if(!nameUp || cuoteroRows.length < 2){
-    document.getElementById('pf-saldo-box').style.display='none';
-    return;
-  }
+  const box = document.getElementById('pf-saldo-box');
+  if(!nameUp || cuoteroRows.length < 2){ box.style.display='none'; return; }
+
+  const headers = cuoteroRows[0]; // fila 0 = encabezados
   const row = cuoteroRows.slice(1).find(r => r[0] && r[0].toString().toUpperCase() === nameUp);
-  if(!row){
-    document.getElementById('pf-saldo-box').style.display='none';
-    return;
+  if(!row){ box.style.display='none'; return; }
+
+  const saldo      = parseMontoPY(row[1]); // col B = SUM de MOVIMIENTOS
+  const cantCuotas = parseInt(row[2]) || 0; // col C = cant cuota
+  const montoCuota = parseMontoPY(row[3]);  // col D = monto cuota
+
+  // Columnas E en adelante = meses (encabezado = "junio 2026", "julio 2026", etc.)
+  const mesesHTML = [];
+  for(let i = 4; i < headers.length; i++){
+    const mes   = headers[i]?.toString().trim();
+    const valor = parseMontoPY(row[i]);
+    if(mes && valor > 0){
+      mesesHTML.push(`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <span style="font-size:11px;color:var(--text2);text-transform:capitalize;">${mes}</span>
+        <span style="font-size:12px;font-weight:700;color:var(--gold);">${valor.toLocaleString('es-PY')} Gs.</span>
+      </div>`);
+    }
   }
-  const saldo = parseMontoPY(row[1]);
-  const cuotasPend = parseInt(row[2]) || 0;
-  document.getElementById('pf-saldo-box').style.display = 'block';
-  document.getElementById('pf-saldo-valor').textContent = Math.abs(saldo).toLocaleString('es-PY') + ' Gs.';
-  document.getElementById('pf-cuotas-pendientes').textContent = cuotasPend + ' cuota(s) pendiente(s)';
+
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:${mesesHTML.length?'14px':'0'};">
+      <div>
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Deuda total</div>
+        <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:var(--red);">${Math.abs(saldo).toLocaleString('es-PY')} Gs.</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Cuotas · Monto</div>
+        <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:var(--green);">${cantCuotas} × ${montoCuota > 0 ? montoCuota.toLocaleString('es-PY')+' Gs.' : '—'}</div>
+      </div>
+    </div>
+    ${mesesHTML.length ? `
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">📅 Pagos por mes</div>
+      ${mesesHTML.join('')}
+    ` : ''}
+  `;
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -635,29 +659,24 @@ function pfSeleccionarCliente(name) {
 function vfRecalc() {
   const costo = parseFloat(document.getElementById('vf-precioreal').value)  || 0;
   const venta = parseFloat(document.getElementById('vf-precioventa').value) || 0;
+  const pct   = parseFloat(document.getElementById('vf-porcentaje').value) / 100 || 0;
   if(costo > 0 && venta > 0) {
-    const pct    = (venta - costo) / venta;
-    const margen = venta - costo;
-    document.getElementById('vf-porcentaje').value = (pct * 100).toFixed(1);
-    document.getElementById('vf-disp-margen').textContent     = margen.toLocaleString('es-PY') + ' Gs.';
-    document.getElementById('vf-disp-ganancias').textContent  = margen.toLocaleString('es-PY') + ' Gs.';
+    const descuento = Math.round(costo * pct);
+    const ganancia  = venta - costo - descuento;
+    document.getElementById('vf-disp-descuento').textContent  = descuento > 0 ? descuento.toLocaleString('es-PY') + ' Gs.' : '—';
+    document.getElementById('vf-disp-ganancias').textContent  = ganancia.toLocaleString('es-PY') + ' Gs.';
     document.getElementById('vf-disp-movimiento').textContent = venta.toLocaleString('es-PY') + ' Gs.';
-    ['calc-margen','calc-ganancia','calc-movimiento'].forEach(id=>document.getElementById(id).classList.add('lit'));
+    ['calc-descuento','calc-ganancia','calc-movimiento'].forEach(id=>document.getElementById(id).classList.add('lit'));
   } else {
-    document.getElementById('vf-disp-margen').textContent     = '—';
+    document.getElementById('vf-disp-descuento').textContent  = '—';
     document.getElementById('vf-disp-ganancias').textContent  = '—';
     document.getElementById('vf-disp-movimiento').textContent = '—';
-    ['calc-margen','calc-ganancia','calc-movimiento'].forEach(id=>document.getElementById(id).classList.remove('lit'));
+    ['calc-descuento','calc-ganancia','calc-movimiento'].forEach(id=>document.getElementById(id).classList.remove('lit'));
   }
   vfGenerarCuotas();
 }
 function vfRecalcFromPct() {
-  const costo = parseFloat(document.getElementById('vf-precioreal').value) || 0;
-  const pct   = parseFloat(document.getElementById('vf-porcentaje').value) / 100 || 0;
-  if(costo > 0 && pct > 0 && pct < 1) {
-    document.getElementById('vf-precioventa').value = Math.round(costo / (1 - pct));
-    vfRecalc();
-  }
+  vfRecalc();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -743,7 +762,8 @@ async function vfEnviarVenta() {
     vfToast('vf-toast-venta', false, 'Completá fecha, cliente y precio de venta.');
     return;
   }
-  const margen = precioVenta - precioReal;
+  const descuento = Math.round(precioReal * porcentaje);
+  const ganancia  = precioVenta - precioReal - descuento;
   const cuotas = [];
   for(let i=1;i<=nCuotas;i++){
     const f = document.getElementById(`vf-cuota-fecha-${i}`)?.value || '';
@@ -755,7 +775,7 @@ async function vfEnviarVenta() {
     tipo:'VENTA', fecha:vfFechaASerial(fecha),
     nombre, persona, empresa, producto, observacion:obs,
     movimiento:precioVenta, precioReal, porcentaje,
-    margen, ganancias:margen, anticipo, nCuotas, montoCuota, cuotas
+    margen:descuento, ganancias:ganancia, anticipo, nCuotas, montoCuota, cuotas
   };
 
   setBtnLoading('vf-btn-venta','vf-spinner-venta','vf-btn-venta-label',true);
@@ -834,10 +854,10 @@ function limpiarVenta() {
   document.getElementById('vf-cuotas-section').style.display  = 'none';
   document.getElementById('vf-montocuota-row').style.display  = 'none';
   document.getElementById('vf-cuotas-grid').innerHTML = '';
-  ['vf-disp-margen','vf-disp-ganancias','vf-disp-movimiento'].forEach(id=>{
+  ['vf-disp-descuento','vf-disp-ganancias','vf-disp-movimiento'].forEach(id=>{
     document.getElementById(id).textContent='—';
   });
-  ['calc-margen','calc-ganancia','calc-movimiento'].forEach(id=>document.getElementById(id).classList.remove('lit'));
+  ['calc-descuento','calc-ganancia','calc-movimiento'].forEach(id=>document.getElementById(id).classList.remove('lit'));
   document.getElementById('vf-fecha').value = new Date().toISOString().split('T')[0];
 }
 function limpiarPago() {
@@ -845,7 +865,7 @@ function limpiarPago() {
   ['pf-monto','pf-empresa','pf-obs'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('pf-producto').value = '';
   document.getElementById('pf-persona').value  = '';
-  document.getElementById('pf-saldo-box').style.display = 'none';
+  const sb = document.getElementById('pf-saldo-box'); sb.style.display='none'; sb.innerHTML='';
   document.getElementById('pf-fecha').value = new Date().toISOString().split('T')[0];
 }
 </script>
