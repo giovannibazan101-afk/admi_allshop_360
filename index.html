@@ -401,7 +401,9 @@ canvas{display:block;}
 }
 @media(max-width:400px){
   .proforma-resumen{grid-template-columns:1fr;}
-}</style>
+}
+
+</style>
 </head>
 <body>
 <div class="bg-grid"></div>
@@ -470,6 +472,11 @@ canvas{display:block;}
       <div class="nav-item" onclick="showPage('proyecciones')" id="nav-proyecciones">
         <span class="nav-item-icon">🗓️</span> Proyecciones de Pago
       </div>
+      <div class="nav-section-label">Operaciones</div>
+      <a class="nav-item nav-item-external" href="ventas.html" target="_blank" id="nav-ventas" style="text-decoration:none;">
+        <span class="nav-item-icon">🛒</span> Nueva Venta / Cobro
+        <span style="margin-left:auto;font-size:10px;opacity:.5;">↗</span>
+      </a>
       <div class="nav-section-label">Finanzas Personales</div>
       <div class="nav-item" onclick="showPage('proforma')" id="nav-proforma">
         <span class="nav-item-icon">💳</span> Gastos &amp; Déficit
@@ -725,6 +732,7 @@ canvas{display:block;}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
+
 // ══════════════════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════════════════
@@ -2058,7 +2066,7 @@ const pageNames = {
   overview:'Resumen General', clients:'Clientes',
   movimientos:'Movimientos', deudas:'Deudas & Cuotas',
   ganancias:'Ganancias', proyecciones:'Proyecciones de Pago',
-  proforma:'Gastos & Déficit'
+  proforma:'Gastos & Déficit', ventas:'Nueva Venta / Cobro'
 };
 function showPage(page) {
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
