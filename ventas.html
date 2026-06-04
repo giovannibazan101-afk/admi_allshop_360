@@ -249,7 +249,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;back
               <option>TRABAJO</option>
               <option>FAMILIA</option>
               <option>AMIGO</option>
-              <option>CONOCIDO</option>
+              <option>FACULTAD</option>
               <option>OTRO</option>
             </select>
           </div>
@@ -437,7 +437,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;back
               <option>TRABAJO</option>
               <option>FAMILIA</option>
               <option>AMIGO</option>
-              <option>CONOCIDO</option>
+              <option>FACULTAD</option>
               <option>OTRO</option>
             </select>
           </div>
@@ -787,7 +787,7 @@ async function vfEnviarVenta() {
       limpiarVenta();
       cargarCuotero();
     } else {
-      vfToast('vf-toast-venta', false, 'Error del Script: ' + (json.error || 'desconocido'));
+      vfToast('vf-toast-venta', false, 'Error del Script: ' + (json.error || 'DESCONOCIDO'));
     }
   } catch(e) {
     vfToast('vf-toast-venta', false, 'Error de conexión: ' + e.message);
@@ -828,7 +828,7 @@ async function vfEnviarPago() {
       limpiarPago();
       cargarCuotero();
     } else {
-      vfToast('vf-toast-pago', false, 'Error del Script: ' + (json.error || 'desconocido'));
+      vfToast('vf-toast-pago', false, 'Error del Script: ' + (json.error || 'DESCONOCIDO'));
     }
   } catch(e) {
     vfToast('vf-toast-pago', false, 'Error de conexión: ' + e.message);
