@@ -662,7 +662,7 @@ function vfRecalc() {
   const pct   = parseFloat(document.getElementById('vf-porcentaje').value) / 100 || 0;
   if(costo > 0 && venta > 0) {
     const descuento = Math.round(costo * pct);
-    const ganancia  = venta - costo - descuento;
+    const ganancia  = venta - (costo - descuento); // ✅ CORREGIDO: venta - costo neto
     document.getElementById('vf-disp-descuento').textContent  = descuento > 0 ? descuento.toLocaleString('es-PY') + ' Gs.' : '—';
     document.getElementById('vf-disp-ganancias').textContent  = ganancia.toLocaleString('es-PY') + ' Gs.';
     document.getElementById('vf-disp-movimiento').textContent = venta.toLocaleString('es-PY') + ' Gs.';
@@ -763,7 +763,7 @@ async function vfEnviarVenta() {
     return;
   }
   const descuento = Math.round(precioReal * porcentaje);
-  const ganancia  = precioVenta - precioReal - descuento;
+  const ganancia  = precioVenta - (precioReal - descuento); // ✅ CORREGIDO: precioVenta - costo neto
   const cuotas = [];
   for(let i=1;i<=nCuotas;i++){
     const f = document.getElementById(`vf-cuota-fecha-${i}`)?.value || '';
