@@ -6,6 +6,8 @@
 <title>AllShop — Ventas & Cobros</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 :root{
   --bg:#07090f;--bg2:#0d1119;
@@ -55,6 +57,9 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;back
 .sel-card-blue:hover::before{opacity:1;}
 .sel-card-green:hover{border-color:rgba(52,211,153,0.4);box-shadow:0 16px 40px rgba(52,211,153,0.1);}
 .sel-card-green:hover::before{opacity:1;}
+.sel-card-gold::before{background:linear-gradient(90deg,#d97706,#fbbf24);}
+.sel-card-gold:hover{border-color:rgba(245,158,11,0.4);box-shadow:0 16px 40px rgba(245,158,11,0.1);}
+.sel-card-gold:hover::before{opacity:1;}
 .sel-card-emoji{font-size:36px;margin-bottom:14px;display:block;}
 .sel-card-title{font-family:'Fraunces',serif;font-size:19px;font-weight:700;letter-spacing:-.3px;margin-bottom:6px;}
 .sel-card-desc{font-size:12px;color:var(--text2);line-height:1.5;}
@@ -76,6 +81,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;back
 .ventas-panel-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 .icon-blue{background:rgba(91,156,246,0.13);border:1px solid rgba(91,156,246,0.22);}
 .icon-green{background:rgba(52,211,153,0.13);border:1px solid rgba(52,211,153,0.22);}
+.header-gold::before{background:linear-gradient(90deg,#d97706,#fbbf24);}
+.icon-gold{background:rgba(245,158,11,0.13);border:1px solid rgba(245,158,11,0.22);}
 .ventas-panel-title{font-family:'Fraunces',serif;font-size:18px;font-weight:700;letter-spacing:-.2px;}
 .ventas-panel-subtitle{font-size:11px;color:var(--text2);margin-top:3px;}
 .ventas-form{padding:26px 24px;}
@@ -197,6 +204,33 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;back
         <div class="sel-card-title">Registrar Cobro</div>
         <div class="sel-card-desc">Marcá un pago recibido de un cliente existente. Descuenta del saldo en Cuotero.</div>
       </div>
+      <div class="sel-card sel-card-gold" onclick="mostrarPantalla('deudas')">
+        <span class="sel-card-emoji">💰</span>
+        <div class="sel-card-title">Ver Deudas</div>
+        <div class="sel-card-desc">Cuánto te debe cada cliente en total, sumando todos sus créditos activos.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PANTALLA DEUDAS ══ -->
+  <div id="screen-deudas" style="display:none;">
+    <div class="form-back" onclick="mostrarPantalla('selector')">← Volver</div>
+    <div class="ventas-panel">
+      <div class="ventas-panel-header header-gold">
+        <div class="ventas-panel-icon icon-gold">💰</div>
+        <div>
+          <div class="ventas-panel-title">Deudas actuales</div>
+          <div class="ventas-panel-subtitle">Saldo pendiente por cliente, sumando todos sus créditos activos</div>
+        </div>
+      </div>
+      <div class="ventas-form" style="padding:18px;">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Total por cobrar (todos los clientes)</div>
+          <div id="deudas-total-general" style="font-family:'Fraunces',serif;font-size:32px;font-weight:900;color:var(--red);">—</div>
+        </div>
+        <div id="deudas-lista"></div>
+        <div class="vf-toast" id="vf-toast-deudas"></div>
+      </div>
     </div>
   </div>
 
@@ -284,6 +318,15 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;back
           <div class="vf-field">
             <label class="vf-label">Observación</label>
             <textarea class="vf-textarea" id="vf-obs" placeholder="Ej: NIKE AIR MAX TALLE 42, COLOR NEGRO&#10;Detalle del producto, número de pedido, etc." oninput="this.value=this.value.toUpperCase()"></textarea>
+          </div>
+        </div>
+
+        <!-- Teléfono WhatsApp -->
+        <div class="vf-row">
+          <div class="vf-field">
+            <label class="vf-label">Teléfono (WhatsApp)</label>
+            <input type="tel" id="vf-telefono" class="vf-input" placeholder="+595 971 123456">
+            <div class="vf-hint">Opcional: para compartir recibo por WhatsApp</div>
           </div>
         </div>
 
@@ -476,10 +519,14 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;back
 // ══════════════════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════════════════
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvGh69zMLmcxHCnmwEx_1SpeP1qOoBTLIKRZ_qnIo5Zq33gf0TOeeZDeDQex2zF4CS/exec';
-const SHEET_CUOTERO_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSv4sJRpZ7wf2dHKkkGpYkhAt1F0ysyRzvHwkNdw05r1APa7nO8ZFDSRmJ7SoQ64wSk8idaVYt0iu5-/pub?gid=900301684&single=true&output=csv';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvGh69zMLmcxHCnmwEx_1SpeP1qOoBTLIKRZ_qnIo5Zq33gf0TOeeZDeDQex2zF4CS/exec'; // ⚠️ reemplazar por la URL del nuevo deploy de Code.gs (V3)
+// ⚠️ Publicá las hojas CREDITOS y CUOTAS del nuevo Google Sheet (Archivo > Compartir > Publicar en la web > CSV)
+// y pegá acá sus links, igual que se hacía antes con CUOTERO.
+const SHEET_CREDITOS_URL = 'PEGAR_AQUI_LINK_CSV_HOJA_CREDITOS';
+const SHEET_CUOTAS_URL   = 'PEGAR_AQUI_LINK_CSV_HOJA_CUOTAS';
 
-let cuoteroRows = [];
+let creditosRows = [];   // filas de la hoja CREDITOS (incluye encabezado en [0])
+let cuotasRows   = [];   // filas de la hoja CUOTAS (incluye encabezado en [0])
 
 // ── Fecha default hoy ──
 (function setDates() {
@@ -488,41 +535,57 @@ let cuoteroRows = [];
   document.getElementById('pf-fecha').value = hoy;
 })();
 
-// ── Cargar CUOTERO ──
-async function cargarCuotero() {
+// ── Cargar CREDITOS + CUOTAS (reemplaza al viejo CUOTERO) ──
+async function cargarCuotero() { return cargarDatos(); }
+async function cargarDatos() {
   try {
-    const res  = await fetch(SHEET_CUOTERO_URL);
-    const text = await res.text();
-    cuoteroRows = parseCSV(text);
+    const [resC, resQ] = await Promise.all([
+      fetch(SHEET_CREDITOS_URL),
+      fetch(SHEET_CUOTAS_URL)
+    ]);
+    creditosRows = parseCSV(await resC.text());
+    cuotasRows   = parseCSV(await resQ.text());
     poblarSelectoresClientes();
   } catch(e) {
-    console.warn('No se pudo cargar el CUOTERO:', e.message);
+    console.warn('No se pudo cargar CREDITOS/CUOTAS:', e.message);
   }
 }
-cargarCuotero();
+cargarDatos();
+
+// Columnas CREDITOS: 0 ID_CREDITO,1 FECHA,2 ID_CLIENTE,3 NOMBRE,4 PERSONA,5 PRODUCTO,
+//   6 OBSERVACION,7 EMPRESA,8 PRECIO_VENTA,9 PRECIO_REAL,10 PORCENTAJE,11 MARGEN,
+//   12 GANANCIA,13 N_CUOTAS,14 MONTO_CUOTA,15 ESTADO,16 ANTICIPO
+// Columnas CUOTAS: 0 ID_CUOTA,1 ID_CREDITO,2 NOMBRE,3 N_CUOTA,4 FECHA_VENCIMIENTO,
+//   5 MONTO_CUOTA,6 SALDO_PENDIENTE,7 ESTADO
+
+function saldoPendienteCredito(idCredito) {
+  return cuotasRows.slice(1)
+    .filter(r => r[1] === idCredito && r[7] !== 'PAGADA')
+    .reduce((acc, r) => acc + parseMontoPY(r[6]), 0);
+}
 
 function poblarSelectoresClientes() {
-  const clientes = cuoteroRows.slice(1)
-    .map(r => r[0]?.toString().trim().toUpperCase())
-    .filter(Boolean)
-    .sort();
+  const filas = creditosRows.slice(1).filter(r => r[3]);
 
-  // selector venta
+  // selector venta: nombres únicos de clientes ya cargados
+  const clientes = [...new Set(filas.map(r => r[3].toString().trim().toUpperCase()))].sort();
   const selVenta = document.getElementById('vf-nombre-sel');
-  // mantener primeras 2 opciones (placeholder + nuevo)
   while(selVenta.options.length > 2) selVenta.remove(2);
-  clientes.forEach(c => {
-    const o = new Option(c, c);
-    selVenta.add(o);
-  });
+  clientes.forEach(c => selVenta.add(new Option(c, c)));
 
-  // selector cobro
+  // selector cobro: un ítem POR CRÉDITO activo (no por cliente), para
+  // poder distinguir cuando un mismo cliente tiene varios créditos a la vez
   const selCobro = document.getElementById('pf-nombre-sel');
   while(selCobro.options.length > 1) selCobro.remove(1);
-  clientes.forEach(c => {
-    const o = new Option(c, c);
-    selCobro.add(o);
-  });
+  filas
+    .filter(r => r[15] === 'FINANCIADO')
+    .forEach(r => {
+      const idCredito = r[0];
+      const saldo = saldoPendienteCredito(idCredito);
+      if (saldo <= 0) return; // ya saldado, no mostrar
+      const label = `${r[3]} — ${r[5]} (${idCredito}) — ${saldo.toLocaleString('es-PY')} Gs.`;
+      selCobro.add(new Option(label, idCredito));
+    });
 }
 
 function parseCSV(text) {
@@ -561,6 +624,7 @@ function mostrarPantalla(pantalla) {
   document.getElementById('screen-selector').style.display = 'none';
   document.getElementById('screen-venta').style.display    = 'none';
   document.getElementById('screen-cobro').style.display    = 'none';
+  document.getElementById('screen-deudas').style.display   = 'none';
   if(pantalla === 'selector') {
     document.getElementById('screen-selector').style.display = 'block';
   } else if(pantalla === 'venta') {
@@ -569,9 +633,147 @@ function mostrarPantalla(pantalla) {
   } else if(pantalla === 'cobro') {
     document.getElementById('screen-cobro').style.display = 'block';
     document.getElementById('screen-cobro').classList.add('active');
+  } else if(pantalla === 'deudas') {
+    document.getElementById('screen-deudas').style.display = 'block';
+    renderDeudas();
   }
   window.scrollTo({top:0,behavior:'smooth'});
 }
+
+// ══════════════════════════════════════════════════════════════════
+// DEUDAS — total por cliente, sumando todos sus créditos activos
+// ══════════════════════════════════════════════════════════════════
+function renderDeudas() {
+  const totalEl = document.getElementById('deudas-total-general');
+  const listaEl = document.getElementById('deudas-lista');
+
+  const porCliente = {}; // nombre -> { total, creditos:[{idCredito,producto,saldo}] }
+  creditosRows.slice(1).filter(r => r[3] && r[15] === 'FINANCIADO').forEach(r => {
+    const idCredito = r[0], nombre = r[3], producto = r[5];
+    const saldo = saldoPendienteCredito(idCredito);
+    if (saldo <= 0) return;
+    if (!porCliente[nombre]) porCliente[nombre] = { total: 0, creditos: [] };
+    porCliente[nombre].total += saldo;
+    porCliente[nombre].creditos.push({ idCredito, producto, saldo });
+  });
+
+  const nombres = Object.keys(porCliente).sort((a,b) => porCliente[b].total - porCliente[a].total);
+  const totalGeneral = nombres.reduce((acc,n) => acc + porCliente[n].total, 0);
+  totalEl.textContent = totalGeneral.toLocaleString('es-PY') + ' Gs.';
+
+  if (!nombres.length) {
+    listaEl.innerHTML = `<div style="text-align:center;color:var(--text2);font-size:12px;padding:20px;">No hay deudas pendientes registradas.</div>`;
+    return;
+  }
+
+  listaEl.innerHTML = nombres.map(n => {
+    const c = porCliente[n];
+    const detalle = c.creditos.length > 1
+      ? c.creditos.map(cr => `<div style="display:flex;justify-content:space-between;padding:4px 0 4px 14px;font-size:11px;color:var(--text2);">
+          <span>${cr.producto} (${cr.idCredito})</span>
+          <span>${cr.saldo.toLocaleString('es-PY')} Gs.</span>
+        </div>`).join('')
+      : '';
+    return `
+      <div style="border-bottom:1px solid var(--border);padding:12px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <span style="font-size:13px;font-weight:600;">${n}${c.creditos.length > 1 ? ` <span style="color:var(--purple);font-size:10px;">· ${c.creditos.length} créditos</span>` : ''}</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:var(--gold);">${c.total.toLocaleString('es-PY')} Gs.</span>
+            <button class="btn-estado-cuenta" data-nombre="${n.replace(/"/g,'&quot;')}"
+              style="background:rgba(91,156,246,0.12);border:1px solid rgba(91,156,246,0.3);color:var(--blue);font-size:10px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;">
+              📄 PDF
+            </button>
+          </div>
+        </div>
+        ${detalle}
+      </div>`;
+  }).join('');
+
+  listaEl.querySelectorAll('.btn-estado-cuenta').forEach(btn => {
+    btn.onclick = () => generarEstadoCuentaPDF(btn.dataset.nombre);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ESTADO DE CUENTA GENERAL (PDF) — deuda total de un cliente,
+// sumando todos sus créditos activos, con detalle de cuotas
+// ══════════════════════════════════════════════════════════════════
+async function generarEstadoCuentaPDF(nombre) {
+  const creditos = creditosRows.slice(1)
+    .filter(r => r[3] === nombre && r[15] === 'FINANCIADO')
+    .map(r => ({ idCredito: r[0], producto: r[5], montoCuota: parseMontoPY(r[14]), saldo: saldoPendienteCredito(r[0]) }))
+    .filter(c => c.saldo > 0);
+
+  if (!creditos.length) {
+    vfToast('vf-toast-deudas', false, `${nombre} no tiene deuda pendiente.`);
+    return;
+  }
+
+  const totalGeneral = creditos.reduce((acc, c) => acc + c.saldo, 0);
+  const hoy = new Date().toLocaleDateString('es-PY');
+
+  const bloquesCreditos = creditos.map(c => {
+    const cuotasPend = cuotasRows.slice(1)
+      .filter(r => r[1] === c.idCredito && r[7] !== 'PAGADA')
+      .map(r => `
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #eef1f6;font-size:11px;color:#1a2333;">Cuota ${r[3]}</td>
+          <td style="padding:8px 0;border-bottom:1px solid #eef1f6;font-size:11px;color:#64748b;">${r[4]}</td>
+          <td style="padding:8px 0;border-bottom:1px solid #eef1f6;font-size:11px;color:#1a2333;text-align:right;font-weight:600;">Gs. ${parseMontoPY(r[6]).toLocaleString('es-PY')}</td>
+        </tr>`).join('');
+
+    return `
+    <div style="border:1px solid #eef1f6;border-radius:14px;padding:16px 18px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;">${c.producto}</div>
+          <div style="font-size:9px;color:#94a3b8;">${c.idCredito}</div>
+        </div>
+        <div style="font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:700;color:#ef4444;">Gs. ${c.saldo.toLocaleString('es-PY')}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        <tbody>${cuotasPend}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  const html = `
+  <div style="width:760px;background:#ffffff;font-family:'DM Sans',Arial,sans-serif;color:#1a2333;">
+    <div style="height:7px;background:linear-gradient(90deg,#d97706,#f59e0b);"></div>
+    <div style="padding:38px 46px 34px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;">
+        <div>
+          <div style="font-family:'Fraunces',Georgia,serif;font-size:23px;font-weight:900;letter-spacing:-.5px;color:#0d1119;">ALLSHOP</div>
+          <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.14em;margin-top:2px;">Ventas &amp; Cobros</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="display:inline-block;background:#fffbeb;color:#d97706;font-size:10px;font-weight:700;letter-spacing:.08em;padding:6px 13px;border-radius:20px;text-transform:uppercase;">Estado de Cuenta</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:8px;">${hoy}</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:24px;">
+        <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Cliente</div>
+        <div style="font-size:18px;font-weight:700;">${nombre}</div>
+      </div>
+
+      <div style="text-align:center;padding:24px;background:#0d1119;border-radius:16px;margin-bottom:26px;">
+        <div style="font-size:9px;color:#8a9ab8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Deuda total (${creditos.length} crédito${creditos.length > 1 ? 's' : ''})</div>
+        <div style="font-family:'Fraunces',Georgia,serif;font-size:30px;font-weight:800;color:#f87171;">Gs. ${totalGeneral.toLocaleString('es-PY')}</div>
+      </div>
+
+      <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Detalle por crédito</div>
+      ${bloquesCreditos}
+
+      <div style="text-align:center;font-size:9px;color:#b7c1d4;margin-top:20px;">AllShop Ventas &amp; Cobros</div>
+    </div>
+  </div>`;
+
+  const nombreArchivo = `estado_cuenta_${nombre.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+  await renderPDFDesdeHTML(html, nombreArchivo);
+}
+
 
 // ══════════════════════════════════════════════════════════════════
 // VENTA — manejo de cliente nuevo
@@ -608,37 +810,46 @@ function vfGetProducto() {
 // ══════════════════════════════════════════════════════════════════
 // COBRO — seleccionar cliente y mostrar saldo
 // ══════════════════════════════════════════════════════════════════
-function pfSeleccionarCliente(name) {
-  const nameUp = name.trim().toUpperCase();
+// name = ID_CREDITO seleccionado (ver poblarSelectoresClientes)
+function pfSeleccionarCliente(idCredito) {
+  return pfSeleccionarCredito(idCredito);
+}
+function pfSeleccionarCredito(idCredito) {
   const box = document.getElementById('pf-saldo-box');
-  if(!nameUp || cuoteroRows.length < 2){ box.style.display='none'; return; }
+  if(!idCredito || creditosRows.length < 2){ box.style.display='none'; return; }
 
-  const headers = cuoteroRows[0]; // fila 0 = encabezados
-  const row = cuoteroRows.slice(1).find(r => r[0] && r[0].toString().toUpperCase() === nameUp);
-  if(!row){ box.style.display='none'; return; }
+  const credito = creditosRows.slice(1).find(r => r[0] === idCredito);
+  if(!credito){ box.style.display='none'; return; }
 
-  const saldo      = parseMontoPY(row[1]); // col B = SUM de MOVIMIENTOS
-  const cantCuotas = parseInt(row[2]) || 0; // col C = cant cuota
-  const montoCuota = parseMontoPY(row[3]);  // col D = monto cuota
+  const cuotasCredito = cuotasRows.slice(1).filter(r => r[1] === idCredito);
+  const saldo      = saldoPendienteCredito(idCredito);
+  const cantCuotas  = cuotasCredito.length;
+  const montoCuota  = parseMontoPY(credito[14]);
+  const nombreCliente = credito[3];
+  const otrosCreditos = creditosRows.slice(1).filter(r => r[3] === nombreCliente && r[15] === 'FINANCIADO');
+  const deudaTotalCliente = otrosCreditos.reduce((acc,r) => acc + saldoPendienteCredito(r[0]), 0);
 
-  // Columnas E en adelante = meses (encabezado = "junio 2026", "julio 2026", etc.)
-  const mesesHTML = [];
-  for(let i = 4; i < headers.length; i++){
-    const mes   = headers[i]?.toString().trim();
-    const valor = parseMontoPY(row[i]);
-    if(mes && valor > 0){
-      mesesHTML.push(`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-        <span style="font-size:11px;color:var(--text2);text-transform:capitalize;">${mes}</span>
+  const mesesHTML = cuotasCredito
+    .filter(r => r[7] !== 'PAGADA')
+    .map(r => {
+      const mes   = r[4]; // FECHA_VENCIMIENTO
+      const valor = parseMontoPY(r[6]); // SALDO_PENDIENTE
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <span style="font-size:11px;color:var(--text2);text-transform:capitalize;">Cuota ${r[3]} · ${mes}</span>
         <span style="font-size:12px;font-weight:700;color:var(--gold);">${valor.toLocaleString('es-PY')} Gs.</span>
-      </div>`);
-    }
-  }
+      </div>`;
+    });
 
   box.style.display = 'block';
   box.innerHTML = `
+    ${otrosCreditos.length > 1 ? `
+    <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:8px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:10px;color:var(--text2);">⚠️ ${nombreCliente} tiene ${otrosCreditos.length} créditos activos — deuda total del cliente:</span>
+      <span style="font-size:13px;font-weight:700;color:var(--gold);">${deudaTotalCliente.toLocaleString('es-PY')} Gs.</span>
+    </div>` : ''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:${mesesHTML.length?'14px':'0'};">
       <div>
-        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Deuda total</div>
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Saldo de este crédito</div>
         <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:var(--red);">${Math.abs(saldo).toLocaleString('es-PY')} Gs.</div>
       </div>
       <div>
@@ -742,6 +953,220 @@ function setBtnLoading(btnId, spinnerId, labelId, loading, label) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// RENDER PDF DESDE HTML (usa html2pdf para respetar tipografías
+// y colores reales de la app, en vez de dibujar texto a mano)
+// ══════════════════════════════════════════════════════════════════
+async function renderPDFDesdeHTML(htmlContent, nombreArchivo) {
+  const host = document.createElement('div');
+  host.style.position = 'fixed';
+  host.style.left = '-9999px';
+  host.style.top = '0';
+  host.innerHTML = htmlContent;
+  document.body.appendChild(host);
+
+  await html2pdf().set({
+    margin: 0,
+    filename: nombreArchivo,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).from(host.firstElementChild).save();
+
+  document.body.removeChild(host);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GENERAR RECIBO PDF - VENTA
+// ══════════════════════════════════════════════════════════════════
+async function generarReciboPDFVenta(datos) {
+  const numCuotas = (datos.cuotas && datos.cuotas.length > 0) ? datos.cuotas.length : 0;
+  const saldoActual = datos.saldoActual || 0;
+
+  const filasCuotas = (datos.cuotas || []).map(c => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #eef1f6;font-size:12px;color:#1a2333;">Cuota ${c.num}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #eef1f6;font-size:12px;color:#64748b;">${c.fecha}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #eef1f6;font-size:12px;color:#1a2333;text-align:right;font-weight:600;">Gs. ${(c.monto || 0).toLocaleString('es-PY')}</td>
+    </tr>`).join('');
+
+  const html = `
+  <div style="width:760px;background:#ffffff;font-family:'DM Sans',Arial,sans-serif;color:#1a2333;">
+    <div style="height:7px;background:linear-gradient(90deg,#3b82f6,#7c3aed);"></div>
+    <div style="padding:38px 46px 34px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;">
+        <div>
+          <div style="font-family:'Fraunces',Georgia,serif;font-size:23px;font-weight:900;letter-spacing:-.5px;color:#0d1119;">ALLSHOP</div>
+          <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.14em;margin-top:2px;">Ventas &amp; Cobros</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="display:inline-block;background:#eef2ff;color:#3b82f6;font-size:10px;font-weight:700;letter-spacing:.08em;padding:6px 13px;border-radius:20px;text-transform:uppercase;">Recibo de Venta</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:8px;">${datos.fecha}</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;padding:18px 20px;background:#f8fafc;border-radius:14px;">
+        <div>
+          <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Cliente</div>
+          <div style="font-size:14px;font-weight:700;">${datos.persona || datos.nombre}</div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Producto</div>
+          <div style="font-size:14px;font-weight:700;">${datos.producto || '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Empresa</div>
+          <div style="font-size:13px;">${datos.empresa || '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Modalidad</div>
+          <div style="font-size:13px;">${numCuotas > 0 ? numCuotas + ' cuotas' : 'Contado'}</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:${numCuotas > 0 ? '24px' : '28px'};">
+        <div style="border:1px solid #eef1f6;border-radius:14px;padding:16px 18px;">
+          <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Monto de venta</div>
+          <div style="font-family:'Fraunces',Georgia,serif;font-size:20px;font-weight:700;">Gs. ${(datos.movimiento || 0).toLocaleString('es-PY')}</div>
+        </div>
+        <div style="border:1px solid #eef1f6;border-radius:14px;padding:16px 18px;">
+          <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Anticipo</div>
+          <div style="font-family:'Fraunces',Georgia,serif;font-size:20px;font-weight:700;">Gs. ${(datos.anticipo || 0).toLocaleString('es-PY')}</div>
+        </div>
+      </div>
+
+      ${numCuotas > 0 ? `
+      <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px;">Cronograma de cuotas</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding-bottom:7px;border-bottom:1.5px solid #1a2333;">Cuota</th>
+            <th style="text-align:left;font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding-bottom:7px;border-bottom:1.5px solid #1a2333;">Vence</th>
+            <th style="text-align:right;font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding-bottom:7px;border-bottom:1.5px solid #1a2333;">Monto</th>
+          </tr>
+        </thead>
+        <tbody>${filasCuotas}</tbody>
+      </table>` : ''}
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 22px;background:#0d1119;border-radius:16px;">
+        <div>
+          <div style="font-size:9px;color:#8a9ab8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Saldo pendiente</div>
+          <div style="font-size:10px;color:#5a6a88;">tras esta operación</div>
+        </div>
+        <div style="font-family:'Fraunces',Georgia,serif;font-size:25px;font-weight:800;color:${saldoActual < 0 ? '#34d399' : '#f87171'};">Gs. ${Math.abs(saldoActual).toLocaleString('es-PY')}</div>
+      </div>
+
+      <div style="text-align:center;font-size:9px;color:#b7c1d4;margin-top:26px;">AllShop Ventas &amp; Cobros</div>
+    </div>
+  </div>`;
+
+  const nombreArchivo = `recibo_venta_${(datos.persona || datos.nombre).replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+  await renderPDFDesdeHTML(html, nombreArchivo);
+
+  return {
+    nombre: nombreArchivo,
+    fecha: datos.fecha,
+    persona: datos.persona || datos.nombre,
+    cuotas: numCuotas,
+    saldo: saldoActual
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GENERAR RECIBO PDF - PAGO
+// ══════════════════════════════════════════════════════════════════
+async function generarReciboPDFPago(datos) {
+  const saldoActual = datos.saldoActual || 0;
+
+  const html = `
+  <div style="width:760px;background:#ffffff;font-family:'DM Sans',Arial,sans-serif;color:#1a2333;">
+    <div style="height:7px;background:linear-gradient(90deg,#059669,#34d399);"></div>
+    <div style="padding:38px 46px 34px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;">
+        <div>
+          <div style="font-family:'Fraunces',Georgia,serif;font-size:23px;font-weight:900;letter-spacing:-.5px;color:#0d1119;">ALLSHOP</div>
+          <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.14em;margin-top:2px;">Ventas &amp; Cobros</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="display:inline-block;background:#ecfdf5;color:#059669;font-size:10px;font-weight:700;letter-spacing:.08em;padding:6px 13px;border-radius:20px;text-transform:uppercase;">Recibo de Cobro</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:8px;">${datos.fecha}</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:26px;padding:18px 20px;background:#f8fafc;border-radius:14px;">
+        <div>
+          <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Cliente</div>
+          <div style="font-size:14px;font-weight:700;">${datos.nombre}</div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Producto</div>
+          <div style="font-size:14px;font-weight:700;">${datos.producto || '—'}</div>
+        </div>
+      </div>
+
+      <div style="text-align:center;padding:24px;border:1.5px solid #a7f3d0;border-radius:16px;margin-bottom:22px;">
+        <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Monto cobrado</div>
+        <div style="font-family:'Fraunces',Georgia,serif;font-size:30px;font-weight:800;color:#059669;">Gs. ${(Math.abs(datos.movimiento) || 0).toLocaleString('es-PY')}</div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 22px;background:#0d1119;border-radius:16px;">
+        <div>
+          <div style="font-size:9px;color:#8a9ab8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Saldo restante</div>
+          <div style="font-size:10px;color:#5a6a88;">de este crédito</div>
+        </div>
+        <div style="font-family:'Fraunces',Georgia,serif;font-size:25px;font-weight:800;color:${saldoActual > 0 ? '#f87171' : '#34d399'};">Gs. ${Math.abs(saldoActual).toLocaleString('es-PY')}</div>
+      </div>
+
+      <div style="text-align:center;font-size:9px;color:#b7c1d4;margin-top:26px;">AllShop Ventas &amp; Cobros</div>
+    </div>
+  </div>`;
+
+  const nombreArchivo = `recibo_pago_${datos.nombre.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+  await renderPDFDesdeHTML(html, nombreArchivo);
+
+  return { nombre: nombreArchivo, fecha: datos.fecha, nombre_cliente: datos.nombre, saldo: saldoActual };
+}
+// ══════════════════════════════════════════════════════════════════
+// COMPARTIR RECIBO POR WHATSAPP
+// ══════════════════════════════════════════════════════════════════
+function compartirPorWhatsApp(datos) {
+  if (!datos.telefono || datos.telefono.trim() === '') {
+    vfToast('vf-toast-venta', false, 'Ingresá un número de WhatsApp para compartir.');
+    return;
+  }
+
+  // Limpiar teléfono: remover espacios, guiones, paréntesis
+  let telefono = datos.telefono.trim().replace(/[\s\-\(\)]/g, '');
+  
+  // Si no tiene +, agregarlo
+  if (!telefono.startsWith('+')) {
+    telefono = '+' + telefono;
+  }
+
+  // Construir mensaje
+  let mensaje = `*RECIBO DE VENTA*\n\n`;
+  mensaje += `Cliente: ${datos.persona || datos.nombre}\n`;
+  mensaje += `Fecha: ${datos.fecha}\n`;
+  mensaje += `Cantidad de Cuotas: ${datos.cuotas && datos.cuotas.length > 0 ? datos.cuotas.length : 'Contado'}\n\n`;
+  
+  if (datos.cuotas && datos.cuotas.length > 0) {
+    mensaje += `*Cuotas Pendientes:*\n`;
+    datos.cuotas.forEach(cuota => {
+      mensaje += `Cuota #${cuota.num} - Vence: ${cuota.fecha} - Monto: Gs. ${(cuota.monto || 0).toLocaleString('es-PY')}\n`;
+    });
+    mensaje += `\n`;
+  }
+  
+  mensaje += `*Saldo:* Gs. ${(datos.saldoActual || 0).toLocaleString('es-PY')}\n\n`;
+  mensaje += `_Generado por AllShop Ventas & Cobros_`;
+
+  // URL para WhatsApp
+  const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+  
+  window.open(urlWhatsApp, '_blank');
+  vfToast('vf-toast-venta', true, 'Abriendo WhatsApp... ✅');
+}
+
+// ══════════════════════════════════════════════════════════════════
 // ENVIAR VENTA
 // ══════════════════════════════════════════════════════════════════
 async function vfEnviarVenta() {
@@ -757,6 +1182,7 @@ async function vfEnviarVenta() {
   const anticipo   = parseFloat(document.getElementById('vf-anticipo').value)   || 0;
   const nCuotas    = parseInt(document.getElementById('vf-ncuotas').value)       || 0;
   const montoCuota = parseFloat(document.getElementById('vf-montocuota').value)  || 0;
+  const telefono   = document.getElementById('vf-telefono').value.trim();
 
   if(!fecha || !nombre || precioVenta <= 0){
     vfToast('vf-toast-venta', false, 'Completá fecha, cliente y precio de venta.');
@@ -784,8 +1210,43 @@ async function vfEnviarVenta() {
     const json = await res.json();
     if(json.ok){
       vfToast('vf-toast-venta', true, `Venta de <strong>${nombre}</strong> registrada — ${precioVenta.toLocaleString('es-PY')} Gs. ✅`);
-      limpiarVenta();
-      cargarCuotero();
+      
+      // 🎯 Generar recibo PDF automáticamente
+      const datosRecibo = {
+        tipo: 'VENTA',
+        nombre,
+        persona,
+        empresa,
+        producto,
+        fecha,
+        precioReal,
+        margen: Math.round(precioReal * porcentaje),
+        movimiento: precioVenta,
+        ganancias: ganancia,
+        anticipo,
+        cuotas,
+        saldoActual: -(precioVenta - anticipo), // Saldo negativo = lo debe
+        telefono
+      };
+      
+      // Pequeño delay para que se vea el toast antes del PDF
+      setTimeout(() => {
+        generarReciboPDFVenta(datosRecibo);
+        
+        // Preguntar si compartir por WhatsApp (si tiene teléfono)
+        if (telefono && telefono.trim() !== '') {
+          setTimeout(() => {
+            if (confirm('¿Deseas compartir el recibo por WhatsApp?')) {
+              compartirPorWhatsApp(datosRecibo);
+            }
+          }, 500);
+        }
+      }, 800);
+      
+      setTimeout(() => {
+        limpiarVenta();
+        cargarCuotero();
+      }, 2000);
     } else {
       vfToast('vf-toast-venta', false, 'Error del Script: ' + (json.error || 'DESCONOCIDO'));
     }
@@ -800,7 +1261,7 @@ async function vfEnviarVenta() {
 // ENVIAR COBRO
 // ══════════════════════════════════════════════════════════════════
 async function vfEnviarPago() {
-  const nombre  = document.getElementById('pf-nombre-sel').value.trim().toUpperCase();
+  const idCredito = document.getElementById('pf-nombre-sel').value;
   const fecha   = document.getElementById('pf-fecha').value;
   const monto   = parseFloat(document.getElementById('pf-monto').value) || 0;
   const producto= document.getElementById('pf-producto').value.trim().toUpperCase();
@@ -808,13 +1269,15 @@ async function vfEnviarPago() {
   const obs     = document.getElementById('pf-obs').value.trim().toUpperCase();
   const empresa = document.getElementById('pf-empresa').value.trim().toUpperCase();
 
-  if(!nombre || !fecha || monto <= 0){
-    vfToast('vf-toast-pago', false, 'Seleccioná un cliente, fecha y monto del cobro.');
+  if(!idCredito || !fecha || monto <= 0){
+    vfToast('vf-toast-pago', false, 'Seleccioná un crédito, fecha y monto del cobro.');
     return;
   }
+  const credito = creditosRows.slice(1).find(r => r[0] === idCredito);
+  const nombre  = credito ? credito[3] : '';
 
   const payload = {
-    tipo:'PAGO', fecha:vfFechaASerial(fecha),
+    tipo:'PAGO', idCredito, fecha:vfFechaASerial(fecha),
     nombre, persona, empresa, producto, observacion:obs,
     movimiento:-Math.abs(monto)
   };
@@ -825,8 +1288,27 @@ async function vfEnviarPago() {
     const json = await res.json();
     if(json.ok){
       vfToast('vf-toast-pago', true, `Cobro de <strong>${monto.toLocaleString('es-PY')} Gs.</strong> registrado para ${nombre} ✅`);
-      limpiarPago();
-      cargarCuotero();
+      
+      // 🎯 Generar recibo PDF automáticamente
+      const datosRecibo = {
+        tipo: 'PAGO',
+        nombre,
+        empresa,
+        producto,
+        fecha,
+        movimiento: -monto,
+        saldoActual: json.saldoNuevo || 0 // El servidor idealmente devuelve el nuevo saldo
+      };
+      
+      // Pequeño delay para que se vea el toast antes del PDF
+      setTimeout(() => {
+        generarReciboPDFPago(datosRecibo);
+      }, 800);
+      
+      setTimeout(() => {
+        limpiarPago();
+        cargarCuotero();
+      }, 1000);
     } else {
       vfToast('vf-toast-pago', false, 'Error del Script: ' + (json.error || 'DESCONOCIDO'));
     }
@@ -844,7 +1326,7 @@ function limpiarVenta() {
   document.getElementById('vf-nombre-sel').value = '';
   document.getElementById('vf-nombre-nuevo').value = '';
   document.getElementById('vf-nuevo-cliente-box').style.display = 'none';
-  ['vf-empresa','vf-precioreal','vf-precioventa','vf-porcentaje','vf-obs','vf-producto-otro']
+  ['vf-empresa','vf-precioreal','vf-precioventa','vf-porcentaje','vf-obs','vf-producto-otro','vf-telefono']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('vf-anticipo').value = '0';
   document.getElementById('vf-persona').value  = '';
@@ -871,3 +1353,4 @@ function limpiarPago() {
 </script>
 </body>
 </html>
+
