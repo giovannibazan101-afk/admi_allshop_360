@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 :root{
@@ -839,15 +840,15 @@ function pfSeleccionarCredito(idCredito) {
   if(!credito){ box.style.display='none'; return; }
 
   const cuotasCredito = cuotasRows.slice(1).filter(r => r[1] === idCredito);
+  const cuotasPendientes = cuotasCredito.filter(r => r[7] !== 'PAGADA');
   const saldo      = saldoPendienteCredito(idCredito);
-  const cantCuotas  = cuotasCredito.length;
+  const cantCuotas  = cuotasPendientes.length;
   const montoCuota  = parseMontoPY(credito[14]);
   const nombreCliente = credito[3];
   const otrosCreditos = creditosRows.slice(1).filter(r => r[3] === nombreCliente && r[15] === 'FINANCIADO');
   const deudaTotalCliente = otrosCreditos.reduce((acc,r) => acc + saldoPendienteCredito(r[0]), 0);
 
-  const mesesHTML = cuotasCredito
-    .filter(r => r[7] !== 'PAGADA')
+  const mesesHTML = cuotasPendientes
     .map(r => {
       const mes   = r[4]; // FECHA_VENCIMIENTO
       const valor = parseMontoPY(r[6]); // SALDO_PENDIENTE
@@ -972,171 +973,182 @@ function setBtnLoading(btnId, spinnerId, labelId, loading, label) {
 // ══════════════════════════════════════════════════════════════════
 // GENERAR RECIBO PDF - VENTA (Minimalista - Solo cuotas y saldo)
 // ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
+// HELPERS COMPARTIDOS PARA LOS RECIBOS PDF
+// ══════════════════════════════════════════════════════════════════
+
+// Dibuja la tarjeta "Cliente / <dato secundario>" ajustando el alto según
+// el largo del nombre, para que nunca se superponga con el dato de la derecha.
+function pdfTarjetaCliente(doc, mx, y, pageWidth, C, nombre, labelDer, valorDer) {
+  const anchoTotal  = pageWidth - 2 * mx;
+  const colMidX     = mx + anchoTotal * 0.66;
+  const anchoNombre = colMidX - (mx + 8) - 6;
+  const nombreTxt   = String(nombre || '—').toUpperCase();
+
+  let fontNombre = 13;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(fontNombre);
+  let lineas = doc.splitTextToSize(nombreTxt, anchoNombre);
+  if (lineas.length > 1) {
+    fontNombre = 10.5;
+    doc.setFontSize(fontNombre);
+    lineas = doc.splitTextToSize(nombreTxt, anchoNombre);
+  }
+  if (lineas.length > 2) {
+    lineas = [lineas[0], lineas[1].replace(/.{0,3}$/, '…')];
+  }
+  const lh = fontNombre > 11 ? 7 : 5.5;
+  const altoCard = Math.max(22, 16 + (lineas.length - 1) * lh + 6);
+
+  doc.setDrawColor(...C.line);
+  doc.setFillColor(...C.panel);
+  doc.roundedRect(mx, y, anchoTotal, altoCard, 3, 3, 'FD');
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...C.gray);
+  doc.text('CLIENTE', mx + 8, y + 8);
+  doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.dark); doc.setFontSize(fontNombre);
+  lineas.forEach((linea, i) => doc.text(linea, mx + 8, y + 16 + i * lh));
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...C.gray);
+  doc.text(labelDer, colMidX, y + 8);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...C.dark);
+  doc.text(valorDer, colMidX, y + 16);
+
+  return y + altoCard;
+}
+
+// Dibuja la caja de saldo (pendiente / saldada / a favor) con el color acorde
+function pdfCajaSaldo(doc, mx, y, pageWidth, C, saldoActual, colorDeuda) {
+  const anchoTotal = pageWidth - 2 * mx;
+  let etiqueta, colorAccent, colorFondo;
+  if (saldoActual < 0) {
+    etiqueta = 'SALDO PENDIENTE'; colorAccent = colorDeuda.accent; colorFondo = colorDeuda.fondo;
+  } else if (saldoActual === 0) {
+    etiqueta = 'CUENTA SALDADA'; colorAccent = C.green; colorFondo = C.greenLight;
+  } else {
+    etiqueta = 'SALDO A FAVOR'; colorAccent = C.green; colorFondo = C.greenLight;
+  }
+
+  doc.setFillColor(...colorFondo);
+  doc.setDrawColor(...colorAccent);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(mx, y, anchoTotal, 24, 3, 3, 'FD');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...colorAccent);
+  doc.text(etiqueta, mx + 8, y + 10);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...C.dark);
+  doc.text(`Gs. ${Math.abs(saldoActual).toLocaleString('es-PY')}`, pageWidth - mx - 8, y + 16, { align: 'right' });
+}
+
 async function generarReciboPDFVenta(datos) {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4'
-  });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageWidth  = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  let yPos = 15;
+  const mx = 15; // margen horizontal
+  const numeroRecibo = 'V-' + Date.now().toString().slice(-8);
 
-  // Fondo negro
-  doc.setFillColor(13, 17, 25);
-  doc.rect(0, 0, pageWidth, pageHeight, 'F');
+  // Paleta (coherente con la app, pero pensada para imprimirse en papel blanco)
+  const C = {
+    navy:[13,17,25], blue:[37,99,235], blueLight:[224,235,255],
+    gold:[180,83,9], goldLight:[254,243,199],
+    green:[5,150,105], greenLight:[209,250,229],
+    dark:[15,23,42], gray:[100,116,139], line:[226,232,240], panel:[248,250,252]
+  };
 
-  // ── ENCABEZADO ──
-  doc.setFont('Fraunces', 'bold');
-  doc.setFontSize(24);
-  doc.setTextColor(226, 234, 247);
-  doc.text('ALLSHOP', pageWidth / 2, yPos, { align: 'center' });
-  
-  // ── LÍNEA SEPARADORA ──
-  yPos += 10;
-  doc.setDrawColor(91, 156, 246);
-  doc.setLineWidth(0.5);
-  doc.line(15, yPos, pageWidth - 15, yPos);
-  
-  // ── TIPO DE DOCUMENTO ──
-  yPos += 8;
-  doc.setFont('DM Sans', 'bold');
+  // ── BANDA SUPERIOR ──
+  doc.setFillColor(...C.navy);
+  doc.rect(0, 0, pageWidth, 32, 'F');
+  doc.setFillColor(...C.blue);
+  doc.rect(0, 32, pageWidth, 1.3, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(255, 255, 255);
+  doc.text('ALLSHOP', mx, 15);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(170, 185, 214);
+  doc.text('VENTAS & COBROS', mx, 20.5);
+
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.setTextColor(91, 156, 246);
-  doc.text('RECIBO DE VENTA', pageWidth / 2, yPos, { align: 'center' });
-  
-  // ── DATOS PRINCIPALES ──
-  yPos += 10;
-  doc.setFont('DM Sans', 'normal');
-  doc.setFontSize(10);
-  
-  // Persona
-  doc.setTextColor(138, 154, 184);
-  doc.text('CLIENTE:', 15, yPos);
-  doc.setTextColor(226, 234, 247);
-  doc.setFont('DM Sans', 'bold');
-  doc.text(datos.nombre, 45, yPos);
-  yPos += 7;
+  doc.setTextColor(255, 255, 255);
+  doc.text('RECIBO DE VENTA', pageWidth - mx, 14, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(170, 185, 214);
+  doc.text(`N.º ${numeroRecibo}  ·  ${datos.fecha}`, pageWidth - mx, 20.5, { align: 'right' });
 
-  // Fecha
-  doc.setFont('DM Sans', 'normal');
-  doc.setTextColor(138, 154, 184);
-  doc.text('FECHA:', 15, yPos);
-  doc.setTextColor(226, 234, 247);
-  doc.text(datos.fecha, 45, yPos);
-  yPos += 7;
+  let y = 44;
 
-  // Número de cuotas
-  doc.setTextColor(138, 154, 184);
-  doc.text('CUOTAS:', 15, yPos);
-  doc.setTextColor(226, 234, 247);
-  const numCuotas = (datos.cuotas && datos.cuotas.length > 0) ? datos.cuotas.length : 'Sin cuotas (Contado)';
-  doc.text(String(numCuotas), 45, yPos);
-  yPos += 10;
+  // ── TARJETA CLIENTE ──
+  const modalidadTxt = (datos.cuotas && datos.cuotas.length > 0) ? `${datos.cuotas.length} cuotas` : 'Contado';
+  y = pdfTarjetaCliente(doc, mx, y, pageWidth, C, datos.nombre, 'MODALIDAD', modalidadTxt);
+  y += 9;
 
-  // ── CUOTAS (si existen) ──
+  // ── RESUMEN DE LA VENTA ──
+  const resumen = [];
+  resumen.push(['Precio total', `Gs. ${(datos.movimiento || 0).toLocaleString('es-PY')}`]);
+  if (datos.anticipo > 0) resumen.push(['Anticipo pagado', `Gs. ${datos.anticipo.toLocaleString('es-PY')}`]);
+  if (datos.producto) resumen.push(['Categoría', datos.producto]);
+  if (datos.observacion) resumen.push(['Detalle', datos.observacion]);
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: mx, right: mx },
+    theme: 'plain',
+    styles: { font: 'helvetica', fontSize: 9.5, textColor: C.dark, cellPadding: { top: 2.4, bottom: 2.4, left: 0, right: 0 } },
+    columnStyles: { 0: { textColor: C.gray, cellWidth: 45 }, 1: { fontStyle: 'bold' } }
+  , body: resumen });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ── PLAN DE CUOTAS ──
   if (datos.cuotas && datos.cuotas.length > 0) {
-    doc.setDrawColor(52, 211, 153);
-    doc.line(15, yPos, pageWidth - 15, yPos);
-    yPos += 7;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(...C.dark);
+    doc.text('PLAN DE CUOTAS', mx, y);
+    y += 4;
 
-    doc.setFont('DM Sans', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(52, 211, 153);
-    doc.text('CUOTAS PENDIENTES', 15, yPos);
-    
-    yPos += 8;
-    doc.setFont('DM Sans', 'normal');
-    doc.setFontSize(9);
+    const filas = datos.cuotas.map(c => [`Cuota ${c.num}`, c.fecha, `Gs. ${(c.monto || 0).toLocaleString('es-PY')}`]);
+    const totalCuotas = datos.cuotas.reduce((a, c) => a + (c.monto || 0), 0);
 
-    // Encabezados tabla
-    doc.setTextColor(138, 154, 184);
-    doc.text('CUOTA', 15, yPos);
-    doc.text('VENCIMIENTO', 40, yPos);
-    doc.text('MONTO', pageWidth - 25, yPos, { align: 'right' });
-    yPos += 6;
-
-    doc.setLineWidth(0.3);
-    doc.setDrawColor(91, 156, 246);
-    doc.line(15, yPos, pageWidth - 15, yPos);
-    yPos += 5;
-
-    // Filas de cuotas
-    let totalCuotas = 0;
-    doc.setTextColor(226, 234, 247);
-    
-    datos.cuotas.forEach(cuota => {
-      doc.setFont('DM Sans', 'normal');
-      doc.text(`#${cuota.num}`, 15, yPos);
-      doc.text(cuota.fecha, 40, yPos);
-      const monto = `Gs. ${(cuota.monto || 0).toLocaleString('es-PY')}`;
-      doc.text(monto, pageWidth - 25, yPos, { align: 'right' });
-      totalCuotas += (cuota.monto || 0);
-      yPos += 6;
-      
-      if (yPos > pageHeight - 35) {
-        doc.addPage();
-        doc.setFillColor(13, 17, 25);
-        doc.rect(0, 0, pageWidth, pageHeight, 'F');
-        yPos = 15;
-      }
+    doc.autoTable({
+      startY: y,
+      margin: { left: mx, right: mx },
+      head: [['Cuota', 'Vencimiento', 'Monto']],
+      body: filas,
+      foot: [['', 'TOTAL PENDIENTE', `Gs. ${totalCuotas.toLocaleString('es-PY')}`]],
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, textColor: C.dark, lineColor: C.line, lineWidth: 0.15, cellPadding: 3.2 },
+      headStyles: { fillColor: C.navy, textColor: 255, fontStyle: 'bold', fontSize: 8.5 },
+      footStyles: { fillColor: C.blueLight, textColor: C.dark, fontStyle: 'bold', fontSize: 9 },
+      alternateRowStyles: { fillColor: C.panel },
+      columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' } }
     });
-
-    // Total cuotas
-    yPos += 2;
-    doc.setLineWidth(0.5);
-    doc.setDrawColor(52, 211, 153);
-    doc.line(15, yPos, pageWidth - 15, yPos);
-    yPos += 6;
-    
-    doc.setFont('DM Sans', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(52, 211, 153);
-    doc.text('TOTAL PENDIENTE:', 15, yPos);
-    const totalText = `Gs. ${totalCuotas.toLocaleString('es-PY')}`;
-    doc.text(totalText, pageWidth - 25, yPos, { align: 'right' });
-    yPos += 10;
+    y = doc.lastAutoTable.finalY + 10;
+  } else {
+    y += 2;
   }
 
-  // ── SALDO ACTUAL ──
-  yPos += 5;
-  if (yPos > pageHeight - 28) {
-    doc.addPage();
-    doc.setFillColor(13, 17, 25);
-    doc.rect(0, 0, pageWidth, pageHeight, 'F');
-    yPos = 15;
-  }
-
-  // Caja de saldo con borde
-  doc.setDrawColor(52, 211, 153);
-  doc.setLineWidth(1.5);
-  doc.rect(15, yPos, pageWidth - 30, 22, 'S');
-  
-  doc.setFont('DM Sans', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(52, 211, 153);
-  doc.text('SALDO', 20, yPos + 7);
-  
+  // ── SALDO ──
+  if (y > pageHeight - 42) { doc.addPage(); y = 20; }
   const saldoActual = datos.saldoActual || 0;
-  const saldoColor = saldoActual < 0 ? [52, 211, 153] : [248, 113, 113];
-  doc.setTextColor(...saldoColor);
-  const saldoText = `Gs. ${saldoActual.toLocaleString('es-PY')}`;
-  doc.setFontSize(16);
-  doc.setFont('Fraunces', 'bold');
-  doc.text(saldoText, pageWidth - 20, yPos + 12, { align: 'right' });
+  pdfCajaSaldo(doc, mx, y, pageWidth, C, saldoActual, { accent: C.gold, fondo: C.goldLight });
 
-  // ── PIE DE PÁGINA ──
-  doc.setFontSize(8);
-  doc.setFont('DM Sans', 'normal');
-  doc.setTextColor(138, 154, 184);
-  doc.text('AllShop Ventas & Cobros', pageWidth / 2, pageHeight - 8, { align: 'center' });
+  // ── PIE DE PÁGINA (todas las páginas) ──
+  const totalPaginas = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPaginas; p++) {
+    doc.setPage(p);
+    doc.setDrawColor(...C.line); doc.setLineWidth(0.2);
+    doc.line(mx, pageHeight - 14, pageWidth - mx, pageHeight - 14);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...C.gray);
+    doc.text('AllShop Ventas & Cobros', mx, pageHeight - 9);
+    doc.text(`Página ${p} de ${totalPaginas}`, pageWidth - mx, pageHeight - 9, { align: 'right' });
+  }
 
   // Descargar
   const nombreArchivo = `recibo_${datos.nombre}_${Date.now()}.pdf`;
   doc.save(nombreArchivo);
-  
+
   return {
     nombre: nombreArchivo,
     fecha: datos.fecha,
@@ -1151,93 +1163,81 @@ async function generarReciboPDFVenta(datos) {
 // ══════════════════════════════════════════════════════════════════
 async function generarReciboPDFPago(datos) {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4'
-  });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageWidth  = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  let yPos = 15;
+  const mx = 15;
+  const numeroRecibo = 'P-' + Date.now().toString().slice(-8);
 
-  // Fondo blanco para recibos de pago
-  doc.setFillColor(255, 255, 255);
-  doc.rect(0, 0, pageWidth, pageHeight, 'F');
+  const C = {
+    green:[5,150,105], greenLight:[209,250,229],
+    red:[220,38,38], redLight:[254,226,226],
+    dark:[15,23,42], gray:[100,116,139], line:[226,232,240], panel:[248,250,252]
+  };
 
-  // ── ENCABEZADO ──
-  doc.setFont('Fraunces', 'bold');
-  doc.setFontSize(24);
-  doc.setTextColor(13, 17, 25);
-  doc.text('ALLSHOP', pageWidth / 2, yPos, { align: 'center' });
-  
-  // ── LÍNEA SEPARADORA ──
-  yPos += 10;
-  doc.setDrawColor(91, 156, 246);
-  doc.setLineWidth(0.5);
-  doc.line(15, yPos, pageWidth - 15, yPos);
-  
-  // ── TIPO DE DOCUMENTO ──
-  yPos += 8;
-  doc.setFont('DM Sans', 'bold');
+  // ── BANDA SUPERIOR ──
+  doc.setFillColor(...C.green);
+  doc.rect(0, 0, pageWidth, 32, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(255, 255, 255);
+  doc.text('ALLSHOP', mx, 15);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(210, 245, 230);
+  doc.text('VENTAS & COBROS', mx, 20.5);
+
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.setTextColor(91, 156, 246);
-  doc.text('RECIBO DE PAGO', pageWidth / 2, yPos, { align: 'center' });
-  
-  // ── DATOS PRINCIPALES ──
-  yPos += 10;
-  doc.setFont('DM Sans', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(13, 17, 25);
-  
-  // Persona
-  doc.setTextColor(100, 100, 100);
-  doc.text('CLIENTE:', 15, yPos);
-  doc.setTextColor(13, 17, 25);
-  doc.setFont('DM Sans', 'bold');
-  doc.text(datos.nombre, 45, yPos);
-  yPos += 7;
+  doc.setTextColor(255, 255, 255);
+  doc.text('RECIBO DE PAGO', pageWidth - mx, 14, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(210, 245, 230);
+  doc.text(`N.º ${numeroRecibo}  ·  ${datos.fecha}`, pageWidth - mx, 20.5, { align: 'right' });
 
-  // Fecha
-  doc.setFont('DM Sans', 'normal');
-  doc.setTextColor(100, 100, 100);
-  doc.text('FECHA:', 15, yPos);
-  doc.setTextColor(13, 17, 25);
-  doc.text(datos.fecha, 45, yPos);
-  yPos += 7;
+  let y = 44;
 
-  // Monto pagado
-  doc.setTextColor(100, 100, 100);
-  doc.text('MONTO PAGADO:', 15, yPos);
-  doc.setTextColor(52, 211, 153);
-  doc.setFont('DM Sans', 'bold');
-  const montoPago = `Gs. ${(Math.abs(datos.movimiento) || 0).toLocaleString('es-PY')}`;
-  doc.text(montoPago, 45, yPos);
-  yPos += 10;
+  // ── TARJETA CLIENTE ──
+  y = pdfTarjetaCliente(doc, mx, y, pageWidth, C, datos.nombre, 'FECHA', datos.fecha);
+  y += 9;
 
-  // ── SALDO ACTUAL ──
-  doc.setDrawColor(52, 211, 153);
-  doc.setLineWidth(1.5);
-  doc.rect(15, yPos, pageWidth - 30, 22, 'S');
-  
-  doc.setFont('DM Sans', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(52, 211, 153);
-  doc.text('SALDO', 20, yPos + 7);
-  
+  // ── MONTO PAGADO (destacado) ──
+  doc.setFillColor(...C.greenLight);
+  doc.setDrawColor(...C.green);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(mx, y, pageWidth - 2 * mx, 26, 3, 3, 'FD');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...C.green);
+  doc.text('MONTO PAGADO', mx + 8, y + 11);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(...C.dark);
+  const montoPago = Math.abs(datos.movimiento || 0);
+  doc.text(`Gs. ${montoPago.toLocaleString('es-PY')}`, pageWidth - mx - 8, y + 19, { align: 'right' });
+  y += 26 + 10;
+
+  // ── OBSERVACIÓN (si existe) ──
+  if (datos.observacion && datos.observacion.trim() !== '') {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...C.gray);
+    doc.text('OBSERVACIÓN', mx, y);
+    y += 5;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...C.dark);
+    const lineasObs = doc.splitTextToSize(datos.observacion, pageWidth - 2 * mx);
+    doc.text(lineasObs, mx, y);
+    y += lineasObs.length * 5 + 8;
+  }
+
+  // ── SALDO RESTANTE ──
+  if (y > pageHeight - 42) { doc.addPage(); y = 20; }
   const saldoActual = datos.saldoActual || 0;
-  const saldoColor = saldoActual < 0 ? [52, 211, 153] : [248, 113, 113];
-  doc.setTextColor(...saldoColor);
-  const saldoText = `Gs. ${saldoActual.toLocaleString('es-PY')}`;
-  doc.setFontSize(16);
-  doc.setFont('Fraunces', 'bold');
-  doc.text(saldoText, pageWidth - 20, yPos + 12, { align: 'right' });
+  pdfCajaSaldo(doc, mx, y, pageWidth, C, saldoActual, { accent: C.red, fondo: C.redLight });
 
   // ── PIE DE PÁGINA ──
-  doc.setFontSize(8);
-  doc.setFont('DM Sans', 'normal');
-  doc.setTextColor(138, 154, 184);
-  doc.text('AllShop Ventas & Cobros', pageWidth / 2, pageHeight - 8, { align: 'center' });
+  doc.setDrawColor(...C.line); doc.setLineWidth(0.2);
+  doc.line(mx, pageHeight - 14, pageWidth - mx, pageHeight - 14);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...C.gray);
+  doc.text('AllShop Ventas & Cobros', mx, pageHeight - 9);
+  doc.text('Comprobante de pago', pageWidth - mx, pageHeight - 9, { align: 'right' });
 
   // Descargar
   const nombreArchivo = `recibo_pago_${datos.nombre}_${Date.now()}.pdf`;
@@ -1414,6 +1414,7 @@ async function vfEnviarPago() {
         nombre,
         empresa,
         producto,
+        observacion: obs,
         fecha,
         movimiento: -monto,
         saldoActual: json.saldoNuevo || 0 // El servidor idealmente devuelve el nuevo saldo
